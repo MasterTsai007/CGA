@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>海巡法規與實務 - 智慧測驗系統</title>
+    <title>海巡軍正43期-期中考</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Diff Match Patch Library (Google) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    <!-- Mermaid JS for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f0f2f5; }
         .main-container { max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
@@ -52,6 +54,33 @@
         .review-a-text { color: #555; white-space: pre-wrap; line-height: 1.6; }
         .review-practice-area { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; }
         .diff-result-mini { margin-top: 10px; padding: 10px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 5px; }
+        
+        /* Diagram Container */
+        .diagram-wrapper {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            text-align: center;
+            overflow: hidden; /* 防止溢出 */
+        }
+        .zoom-controls {
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .zoom-controls input {
+            width: 150px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        .mermaid {
+            transform-origin: top center;
+            transition: transform 0.1s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -59,8 +88,8 @@
 <div class="container">
     <div class="main-container">
         <div class="text-center mb-4">
-            <h2 class="fw-bold text-primary">👮‍♂️ 海巡法規與實務 - 智慧測驗系統</h2>
-            <p class="text-muted">題庫更新版 (整合縮題_2.pdf) | 隨機測驗 & 自我練習模式</p>
+            <h2 class="fw-bold text-primary">👮‍♂️ 海巡軍正43期-期中考</h2>
+            <p class="text-muted">題庫更新版 (含流程圖) | 隨機測驗 & 自我練習模式</p>
         </div>
 
         <!-- Control Panel -->
@@ -163,7 +192,7 @@
                 </div>
             </div>
             <div class="alert alert-info py-2 small">
-                <i class="bi bi-info-circle"></i> 提示：您可以點擊每題下方的「隱藏答案」進行自我練習，輸入後按「比對」即可檢視差異。
+                <i class="bi bi-info-circle"></i> 提示：您可以點擊每題下方的「隱藏答案」進行自我練習。第16題與第33題附有流程圖，可調整大小檢視。
             </div>
             <div id="reviewContent">
                 <!-- Javascript will populate this -->
@@ -174,6 +203,9 @@
 </div>
 
 <script>
+// 初始化 Mermaid
+mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+
 /**
  * 內建題庫資料 (來自: 題庫縮減整合版_2.pdf)
  * 已保留原始編號 (1、 2、...) 以符合比對要求
@@ -317,17 +349,7 @@ const rawDataString = `
 2、執勤人員應著救生衣、攜帶哨子、擴音器等器材,實施勸導時應視情況使用哨子、擴音器等器材確實令民眾知悉勸導內容,並須注意態度,口氣和緩,避免造成口角。
 3、確實運用港區監控系統或其他蒐證器材實施蒐證,並將勸導內容及執法情形全程實施錄音(影)存證,以作為後續佐證資料。
 (流程處置)
-未劃定警戒區域
-颱風或天候惡劣時
-經縣(市)政府公告劃定警戒區域
-對岸際、港口逗留觀浪、撿拾漂流木或從事釣魚等活動之民眾,衡量當時客觀情狀(明白而立即危險)有急迫危險,符合行政執行法第36、37及39條,得採取即時強制手段禁止其進入或命其離去,惟仍應注意比例原則之適用,並全程錄音(影)。
-若警戒區已拉設封鎖線,民眾未取得通行證仍執意進入等明顯違規態樣。
-針對未取得通行證而欲進入之民眾
-可適當以言語或書面進行勸導
-地方政府劃定警戒區前民眾已合法進入,或不確定民眾係於劃定警戒區後未取得通行證進入。
-▼
-執意進入或逗留
-應即開立舉發單,並採取直接強制手段禁止其進入或命其離去,全程錄音(影)。
+見下方流程圖
 
 [Type:簡答題]
 17. 貴官於巡防區勤務指揮中心擔任執勤員時,應與雷達作業組共同複視監控轄區海面目標,請試舉5種海面可疑目標徵候？
@@ -595,6 +617,96 @@ const rawDataString = `
 4、倘地方應變中心指揮官否決其出港後,該船仍執意出港,則於以勸導必要時開立勸導單及舉發書並函送主管機關。
 `;
 
+// 定義流程圖資料 (對應第16題)
+// 根據 PDF 內容製作 (修正版，使用 Mermaid)
+const diagramQ16 = `
+flowchart TD
+    %% 設定基本樣式
+    classDef default fill:#fff,stroke:#333,stroke-width:1px;
+    classDef startNode fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef endNode fill:#ffebee,stroke:#b71c1c,stroke-width:2px;
+
+    Start{{"颱風或天候惡劣時"}}:::startNode
+    
+    Area_No["未劃定警戒區域"]
+    Area_Yes["經縣(市)政府公告劃<br>定警戒區域"]
+    
+    Action_Left("對岸際、港口逗留觀浪、撿<br>拾漂流木或從事釣魚等活<br>動之民眾，衡量當時客觀情<br>狀(明白而立即危險)有急<br>迫危險，符合行政執行法第<br>36、37及39條，得採取即<br>時強制手段禁止其進入或<br>命其離去，惟仍應注意比例<br>原則之適用，並全程錄音<br>(影)。")
+    
+    Sub_Violate["若警戒區已拉設封鎖<br>線，民眾未取得通行<br>證仍執意進入等明顯<br>違規態樣。"]
+    Sub_NoPass["針對未取得通行<br>證而欲進入之民<br>眾。"]
+    Sub_LegalEntry["地方政府劃定警戒區前民眾<br>已合法進入，或不確定民眾<br>係於劃定警戒區後未取得通<br>行證進入。"]
+    
+    Advice["可適當以言語或書面進行勸導。"]
+    
+    Final_Action("應即開立舉發單，並採取直接強制手段禁止其進入或命其<br>離去，全程錄音 (影)。"):::endNode
+
+    %% 連線邏輯 (Connections)
+    Start --> Area_No
+    Start --> Area_Yes
+    
+    Area_No --> Action_Left
+    
+    Area_Yes --> Sub_Violate
+    Area_Yes --> Sub_NoPass
+    Area_Yes --> Sub_LegalEntry
+    
+    Sub_Violate --> Final_Action
+    Sub_NoPass --> Advice
+    Sub_LegalEntry --> Advice
+    
+    Advice -- "執意進入或逗留" --> Final_Action
+`;
+
+// 定義流程圖資料 (對應第33題)
+// 根據 flowchart33.html 內容製作
+const diagramQ33 = `
+flowchart TD
+    %% 定義節點樣式
+    classDef default fill:#fff,stroke:#333,stroke-width:1px;
+    classDef startNode fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef endNode fill:#ffebee,stroke:#b71c1c,stroke-width:2px;
+
+    %% 節點內容 (Node Definitions)
+    %% {{ }} 代表六角形
+    Start{{"依法執行職務遭侮<br>辱或不當肢體行為<br>時之處置"}}:::startNode
+
+    CoastGuard["岸巡隊"]
+    Police["所在地警察機<br>關支援協處"]
+    Evidence["全程蒐證並制止"]
+
+    MobileForce["派遣機動兵<br>力，形成優勢"]
+    Control["管制現場"]
+    Counter["無法制止時即時反制"]
+
+    Arrest["逮捕侮辱、施強暴脅迫<br>或聚眾妨礙公務<br>者，移送法辦"]
+
+    %% ( ) 代表圓角矩形/橢圓
+    Medical("將傷患送醫及驗傷<br>以作為相關事證"):::endNode
+
+    %% 連線邏輯 (Connections)
+    %% 左、中、右 分支
+    Start -- "通報" --> CoastGuard
+    Start --> Evidence
+    Start -- "通報" --> Police
+
+    %% 左側流程
+    CoastGuard --> MobileForce
+    MobileForce --> Control
+    MobileForce --> Counter
+
+    %% 中間流程
+    Evidence --> Counter
+    Counter --> Arrest
+
+    %% 匯聚到逮捕
+    Control --> Arrest
+    Police --> Arrest
+
+    %% 最後步驟
+    Arrest ~~~ Medical
+`;
+
 let questionBank = [];
 let usedIndices = new Set();
 let currentIndex = -1;
@@ -604,6 +716,14 @@ let currentQ = null;
 window.onload = function() {
     parseQuestionBank();
     updateStats();
+    // 注入流程圖到第16題 (索引15)
+    if (questionBank.length > 15) {
+        questionBank[15].diagram = diagramQ16;
+    }
+    // 注入流程圖到第33題 (索引32)
+    if (questionBank.length > 32) {
+        questionBank[32].diagram = diagramQ33;
+    }
     document.getElementById('btnImport').className = "btn btn-success";
     document.getElementById('statsArea').style.display = 'block';
 };
@@ -624,13 +744,13 @@ function parseQuestionBank() {
         let parts = content.split('答：');
         if (parts.length >= 2) {
             let qText = parts[0].trim();
-            // 答案可能是剩下所有部分
             let aText = parts.slice(1).join('答：').trim();
             
             questionBank.push({
                 type: type,
                 q: qText,
-                a: aText
+                a: aText,
+                diagram: null // 預設無圖
             });
         }
     });
@@ -640,9 +760,8 @@ function updateStats() {
     document.getElementById('countTotal').innerText = questionBank.length;
 }
 
-// 檢視完整題庫功能 (Step 1-4 實作)
+// 檢視完整題庫功能
 document.getElementById('btnReview').addEventListener('click', () => {
-    // 隱藏其他區域，顯示檢視區
     document.getElementById('statsArea').style.display = 'none';
     document.getElementById('quizArea').style.display = 'none';
     document.getElementById('controlPanel').style.display = 'none';
@@ -659,9 +778,23 @@ document.getElementById('btnReview').addEventListener('click', () => {
     questionBank.forEach((q, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'card mb-3 shadow-sm review-item';
-        // 使用 data-id 屬性方便操作
         itemDiv.setAttribute('data-id', index);
         
+        let diagramHtml = '';
+        if (q.diagram) {
+            diagramHtml = `
+                <div class="diagram-wrapper">
+                    <div class="zoom-controls">
+                        <label class="small text-muted"><i class="bi bi-zoom-in"></i> 圖表縮放: </label>
+                        <input type="range" min="0.5" max="2" step="0.1" value="1" oninput="resizeDiagram(this, ${index})">
+                    </div>
+                    <div class="mermaid" id="mermaid-${index}">
+                        ${q.diagram}
+                    </div>
+                </div>
+            `;
+        }
+
         itemDiv.innerHTML = `
             <div class="card-body">
                 <div class="d-flex justify-content-between">
@@ -672,13 +805,13 @@ document.getElementById('btnReview').addEventListener('click', () => {
                 </div>
                 <p class="card-text fw-bold" style="white-space: pre-wrap;">${q.q}</p>
                 
-                <!-- 答案顯示區 (預設隱藏) -->
+                ${diagramHtml}
+
                 <div id="ans-container-${index}" class="review-a-container" style="display:none;">
                     <div class="badge bg-secondary mb-2">標準答案</div>
                     <div class="review-a-text" id="std-ans-${index}">${q.a}</div>
                 </div>
 
-                <!-- 練習輸入區 (當答案隱藏時顯示) -->
                 <div id="practice-container-${index}" class="review-practice-area">
                     <label class="form-label text-muted small">✍️ 自我練習區：</label>
                     <textarea class="form-control mb-2" id="practice-input-${index}" rows="4" placeholder="在此輸入您的答案..."></textarea>
@@ -689,23 +822,31 @@ document.getElementById('btnReview').addEventListener('click', () => {
         `;
         reviewContent.appendChild(itemDiv);
     });
+    
+    mermaid.init();
 });
 
-// 切換單題答案顯示/隱藏
+window.resizeDiagram = function(rangeInput, index) {
+    const scale = rangeInput.value;
+    const diagramDiv = document.getElementById(`mermaid-${index}`);
+    if (diagramDiv) {
+        diagramDiv.style.transform = `scale(${scale})`;
+    }
+};
+
 window.toggleAnswer = function(index) {
     const ansContainer = document.getElementById(`ans-container-${index}`);
     const practiceContainer = document.getElementById(`practice-container-${index}`);
     
     if (ansContainer.style.display === 'none') {
         ansContainer.style.display = 'block';
-        practiceContainer.style.display = 'none'; // 顯示答案時隱藏練習區
+        practiceContainer.style.display = 'none'; 
     } else {
         ansContainer.style.display = 'none';
-        practiceContainer.style.display = 'block'; // 隱藏答案時顯示練習區
+        practiceContainer.style.display = 'block'; 
     }
 };
 
-// 練習模式比對功能
 window.checkPractice = function(index) {
     const userAns = document.getElementById(`practice-input-${index}`).value;
     const stdAns = questionBank[index].a;
@@ -716,13 +857,11 @@ window.checkPractice = function(index) {
         return;
     }
 
-    // 使用相同的核心比對邏輯
     const diffHtml = computeDiff(stdAns, userAns);
     resultDiv.innerHTML = `<strong>比對結果：</strong><br>${diffHtml}`;
     resultDiv.style.display = 'block';
 };
 
-// 全部顯示/隱藏切換
 let isAllVisible = false;
 document.getElementById('btnToggleAll').addEventListener('click', () => {
     isAllVisible = !isAllVisible;
@@ -739,12 +878,10 @@ document.getElementById('btnToggleAll').addEventListener('click', () => {
     });
 });
 
-// 從檢視模式返回
 document.getElementById('btnBackFromReview').addEventListener('click', () => {
     document.getElementById('reviewArea').style.display = 'none';
     document.getElementById('controlPanel').style.display = 'block';
     
-    // 判斷原本是在哪個狀態
     if (usedIndices.size > 0 && currentQ) {
         document.getElementById('quizArea').style.display = 'block';
     } else {
@@ -752,7 +889,6 @@ document.getElementById('btnBackFromReview').addEventListener('click', () => {
     }
 });
 
-// 全部重設 (自動開始)
 document.getElementById('btnReset').addEventListener('click', () => {
     if(confirm('確定要全部重設並重新開始測驗嗎？')) {
         usedIndices.clear();
@@ -772,7 +908,6 @@ document.getElementById('btnReset').addEventListener('click', () => {
     }
 });
 
-// 開始測驗
 document.getElementById('btnStart').addEventListener('click', () => {
     if (questionBank.length === 0) {
         alert("題庫為空，請檢查解析！");
@@ -784,7 +919,6 @@ document.getElementById('btnStart').addEventListener('click', () => {
     nextQuestion();
 });
 
-// Step 2: 隨機抓題
 function nextQuestion() {
     if (usedIndices.size >= questionBank.length) {
         alert("恭喜！您已完成題庫中的所有題目！");
@@ -800,7 +934,6 @@ function nextQuestion() {
     currentIndex = idx;
     currentQ = questionBank[idx];
 
-    // UI Update
     document.getElementById('qTypeBadge').innerText = currentQ.type;
     document.getElementById('qProgress').innerText = `進度: ${usedIndices.size} / ${questionBank.length}`;
     document.getElementById('questionText').innerText = currentQ.q;
@@ -809,13 +942,11 @@ function nextQuestion() {
     document.getElementById('resultArea').style.display = 'none';
     document.getElementById('btnSubmit').style.display = 'block';
     
-    // Scroll to top
     document.getElementById('quizArea').scrollIntoView({ behavior: 'smooth' });
 }
 
 document.getElementById('btnNext').addEventListener('click', nextQuestion);
 
-// Step 3: 比對邏輯 (主測驗區)
 document.getElementById('btnSubmit').addEventListener('click', () => {
     let userAns = document.getElementById('userAnswer').value;
     let stdAns = currentQ.a;
@@ -836,38 +967,31 @@ document.getElementById('btnSubmit').addEventListener('click', () => {
     document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
 });
 
-// Helper: 判斷是否為純標點符號
 function isPunctuationOnly(str) {
     return /^([，。、；：？！「」『』().,;?!:"'\s\n\r]+)$/.test(str);
 }
 
-// Helper: 核心比對運算
 function computeDiff(std, user) {
     if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
 
     let dmp = new diff_match_patch();
-    
-    // 策略：使用原始文字比對 (Raw Text)，這樣可以保留標點
     let diffs = dmp.diff_main(std, user);
     dmp.diff_cleanupSemantic(diffs);
 
     let html = '';
     diffs.forEach(part => {
-        let type = part[0]; // 0: equal, 1: insert (user extra), -1: delete (user missing)
+        let type = part[0];
         let text = part[1];
 
         if (type === 0) {
             html += `<span>${text}</span>`;
         } else {
-            // 如果差異部分僅由標點符號組成，我們將其視為「相等」(正常顯示)
             if (isPunctuationOnly(text)) {
                  html += `<span>${text}</span>`;
             } else {
                 if (type === 1) { 
-                    // 多餘 (紅色刪除線)
                     html += `<span class="diff-ins">${text}</span>`;
                 } else if (type === -1) { 
-                    // 缺漏 (藍色底色，無額外文字)
                     html += `<span class="diff-missing">${text}</span>`;
                 }
             }
