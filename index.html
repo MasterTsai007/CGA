@@ -38,6 +38,10 @@
         .result-box { white-space: pre-wrap; word-break: break-all; font-size: 1rem; line-height: 1.8; }
         .card-header-custom { background: linear-gradient(45deg, #2c3e50, #4ca1af); color: white; border-radius: 12px 12px 0 0 !important; }
         .badge-type { font-size: 0.9rem; padding: 6px 10px; }
+        .badge-cat { font-size: 0.8rem; padding: 5px 8px; margin-right: 5px; }
+        .bg-law { background-color: #6f42c1; color: white; } /* 法律紫色 */
+        .bg-pro { background-color: #20c997; color: white; } /* 專業青色 */
+
         #statsArea { display: none; transition: all 0.5s; }
         #quizArea { display: none; }
         #reviewArea { display: none; } 
@@ -81,6 +85,15 @@
             transform-origin: top center;
             transition: transform 0.1s ease-out;
         }
+
+        /* Animation for menu transitions */
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -89,22 +102,37 @@
     <div class="main-container">
         <div class="text-center mb-4">
             <h2 class="fw-bold text-primary">👮‍♂️ 海巡軍正43期-期中考</h2>
-            <p class="text-muted">題庫更新版 (含流程圖) | 隨機測驗 & 自我練習模式</p>
+            <p class="text-muted">題庫分類版 (含流程圖) | 隨機測驗 & 類型篩選</p>
         </div>
 
         <!-- Control Panel -->
         <div id="controlPanel" class="card mb-4 border-0 shadow-sm">
             <div class="card-body bg-light rounded-3">
-                <div class="step-indicator">Step 1: 匯入與重設</div>
-                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <div class="step-indicator">功能選單</div>
+                
+                <!-- Main Menu Buttons (Step 1) -->
+                <div id="mainMenu" class="d-flex flex-wrap gap-2 justify-content-center mt-3 animate-fade-in">
                     <button id="btnImport" class="btn btn-outline-secondary" disabled>✅ 題庫已自動載入</button>
-                    <button id="btnReset" class="btn btn-danger">🔄 全部重設 (歸零並開始)</button>
+                    <button id="btnReset" class="btn btn-danger">🔄 全部重設 (Reset)</button>
                     <button id="btnReview" class="btn btn-info text-white">📖 完整題庫與練習</button>
-                    <button id="btnStart" class="btn btn-primary btn-xl px-5">🚀 隨機測驗模式</button>
+                    <button id="btnStartMode" class="btn btn-primary btn-xl px-5">🚀 隨機測驗模式</button>
+                </div>
+
+                <!-- Category Selection Menu (Step 2 - Hidden by default) -->
+                <div id="categoryMenu" style="display:none;" class="mt-4 text-center animate-fade-in">
+                    <h5 class="mb-4 text-secondary fw-bold">🎯 請選擇測驗類型以開始出題：</h5>
+                    <div class="d-flex gap-3 justify-content-center flex-wrap">
+                        <button class="btn btn-outline-dark btn-lg px-4" onclick="startQuiz('all')">📚 全部 (All)</button>
+                        <button class="btn btn-outline-primary btn-lg px-4" onclick="startQuiz('法律')">⚖️ 法律</button>
+                        <button class="btn btn-outline-success btn-lg px-4" onclick="startQuiz('專業')">⚓ 專業</button>
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-link text-muted" onclick="showMainMenu()">⬅️ 返回主選單</button>
+                    </div>
                 </div>
                 
                 <!-- Stats Display -->
-                <div id="statsArea" class="alert alert-success mt-3 text-center mx-auto" style="max-width: 600px;">
+                <div id="statsArea" class="alert alert-success mt-4 text-center mx-auto" style="max-width: 600px;">
                     <h5 class="alert-heading mb-2">📚 題庫匯入完成！</h5>
                     <div class="d-flex justify-content-center gap-4">
                         <span>📝 題目總數：<strong id="countTotal" class="fs-5">0</strong> 題</span>
@@ -118,6 +146,7 @@
             <div class="card border-0 shadow">
                 <div class="card-header card-header-custom d-flex justify-content-between align-items-center p-3">
                     <div>
+                        <span id="qCategoryBadge" class="badge badge-cat me-1">分類</span>
                         <span id="qTypeBadge" class="badge bg-warning text-dark badge-type me-2">問答/申論</span>
                         <span class="text-white-50 small">隨機出題模式</span>
                     </div>
@@ -184,15 +213,29 @@
 
         <!-- Review Area (Practice Mode) -->
         <div id="reviewArea">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <h4 class="fw-bold text-dark"><i class="bi bi-book"></i> 完整題庫與練習</h4>
-                <div>
-                    <button id="btnToggleAll" class="btn btn-sm btn-outline-secondary me-2">全部顯示/隱藏答案</button>
-                    <button id="btnBackFromReview" class="btn btn-sm btn-dark">⬅️ 返回主畫面</button>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Filter Controls -->
+                    <div class="btn-group" role="group" aria-label="Category Filter">
+                        <input type="radio" class="btn-check" name="catFilter" id="filterAll" value="all" checked onchange="filterQuestions('all')">
+                        <label class="btn btn-outline-secondary" for="filterAll">全部</label>
+
+                        <input type="radio" class="btn-check" name="catFilter" id="filterLaw" value="法律" onchange="filterQuestions('法律')">
+                        <label class="btn btn-outline-primary" for="filterLaw">法律</label>
+
+                        <input type="radio" class="btn-check" name="catFilter" id="filterPro" value="專業" onchange="filterQuestions('專業')">
+                        <label class="btn btn-outline-success" for="filterPro">專業</label>
+                    </div>
+
+                    <div class="vr mx-2"></div>
+
+                    <button id="btnToggleAll" class="btn btn-sm btn-outline-dark">全部顯示/隱藏答案</button>
+                    <button id="btnBackFromReview" class="btn btn-sm btn-dark">⬅️ 返回</button>
                 </div>
             </div>
             <div class="alert alert-info py-2 small">
-                <i class="bi bi-info-circle"></i> 提示：您可以點擊每題下方的「隱藏答案」進行自我練習。第16題與第33題附有流程圖，可調整大小檢視。
+                <i class="bi bi-info-circle"></i> 提示：點擊上方按鈕可篩選題目類型。點擊每題下方的「隱藏答案」進行自我練習。
             </div>
             <div id="reviewContent">
                 <!-- Javascript will populate this -->
@@ -207,11 +250,11 @@
 mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
 
 /**
- * 內建題庫資料 (來自: 題庫縮減整合版_2.pdf)
- * 已保留原始編號 (1、 2、...) 以符合比對要求
+ * 內建題庫資料 (已加入分類標籤)
+ * 格式：[Type:類型|Category:分類]
  */
 const rawDataString = `
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 1. 訊問拘捕被告時告知事項為何?
 答：
 1、告知罪名。
@@ -219,7 +262,7 @@ const rawDataString = `
 3、得選任辯護人。
 4、得請求調查有利之證據
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 2. 刑事訴訟法對現行犯的定義?
 答：
 刑事訴訟法第88條規定:
@@ -229,18 +272,18 @@ const rawDataString = `
 1、被追呼為犯罪人者。
 2、因持有兇器、贓物或其他物件,或於身體、衣服等處露有犯罪痕跡,顯可疑為犯罪人者。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 3. 何謂告訴乃論之罪?
 答：
 1、告訴乃論之罪,係指有告訴權人,向司法機關申告犯罪事實並表示訴追之意思表示,始得審判訴追之罪。
 2、告訴乃論之罪依情形可分為兩種,絕對告訴乃論之罪及相對告訴乃論之罪,前者著重於犯罪事實,凡是觸犯各該罪時,不論犯人身分為何,均須告訴乃論;後者著重於犯人,必須具有一定之身分者,始須告訴乃論,否則僅屬於非告訴乃論之罪,此類犯罪必須告訴人除申告犯罪事實表示訴追意思外,並表明犯人始得訴追。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 4. 偵查中檢察官、檢察事務官、司法警察官或司法警察訊問被告或犯罪嫌疑人時,辯護人得在場並陳述意見。但何種情形下,得限制或禁止辯護人之在場權?
 答：
 依刑事訴訟法第245條第2項,有事實足認其在場有妨害國家機密或有湮滅、偽造、變造證據或勾串共犯或證人或妨害他人名譽之虞,或其行為不當足以影響偵查秩序者。
 
-[Type:申論題]
+[Type:申論題|Category:法律]
 5. 請簡述何謂無罪推定原則?對訴訟制度的影響?
 答：
 「無罪推定原則」是國際公認的刑事訴訟基本原則,我國刑事訴訟法第一百五十四條第一項規定:「被告未經審判證明有罪確定前,推定其為無罪。」即揭示此一原則。其核心意義包括:
@@ -250,7 +293,7 @@ const rawDataString = `
 4、保護被告人基本人權,防止無辜者遭受不當刑事處罰。
 5、適用於整個刑事訴訟程序,包括偵查和審判階段。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 6. 請述比例原則之內涵為何?請以「殺雞」與「取卵」分析,何時不具有適當性?
 答：
 關於行政之方法與目的間應具有比例考量,依據行政程序法第7條之規定如下:
@@ -259,7 +302,7 @@ const rawDataString = `
 狹義比例原則:採取之方法所造成之損害不得與欲達成目的之利益顯失均衡。
 當殺的是公雞、小雞、沒在下蛋的母雞時,因該殺雞無法取得卵,故是違反適當性原則,故不符合比例原則。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 7. 依據《行政罰法》第18條行政機關執行處罰裁量時,所應考慮之因素?
 答：
 裁處罰鍰,應審酌違反行政法上義務行為
@@ -268,7 +311,7 @@ const rawDataString = `
 3、因違反行政法上義務所得之利益。
 4、考量受處罰者之資力。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 8. 防疫視同作戰的最高指導原則?
 答：
 1、最高標準。
@@ -276,7 +319,7 @@ const rawDataString = `
 3、長期作戰準備。
 4、寧可多做、不可少做。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 9. 例舉3項防範非洲豬瘟勤務作為?
 答：
 1、對進港船舶實施100%安全檢查。
@@ -287,7 +330,7 @@ const rawDataString = `
 6、從金馬澎地區運送至臺灣本島之包裹、貨物及冷凍櫃,執行安檢時應提高警覺。
 7、針對曾發生海漂豬隻屍體及垃圾易蝟集處,配合漲潮、洋流等資訊,加強注意是否有豬隻屍體。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 10. 走私禽鳥及處理相關人員之健康管理查獲走私活禽鳥類接觸人員作業注意事項為何?
 答：
 1、即刻通報:當地衛生單位。
@@ -296,7 +339,7 @@ const rawDataString = `
 4、檢送接觸人員名冊:當地衛生單位
 5、自主健康管理:7天。
 
-[Type:申論題]
+[Type:申論題|Category:法律]
 11. 請說明於岸際發現豬隻屍體應如何處置?另說明如何拉設封鎖線?
 答：
 1、保持現狀,拉起封鎖線管制人員進出,將現場發現豬隻屍體之區域、數量及時間等資訊通報當地防疫局派員到場處理,並檢視周遭有無其他豬隻屍體。
@@ -306,7 +349,7 @@ const rawDataString = `
 (3)第三區:新聞媒體採訪及攝影區域。
 (4)第四區:圍觀民眾。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 12. 《國家安全法》為海巡署執行「安全檢查」重要依據。請說明海巡機關於必要時,依法得對哪些對象實施檢查?
 答：
 1、依據《國家安全法》第5條,警察或海岸巡防機關於必要時,對左列人員、物品及運輸工具,得依其職權實施檢查:
@@ -316,25 +359,25 @@ const rawDataString = `
 (4)前二款運輸工具之船員、機員、漁民或其他從業人員及其所攜帶之物件。
 2、對前項之檢查,執行機關於必要時,得報請行政院指定國防部命令所屬單位協助執行之。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 13. 灰色地帶操作領域及定義為何?
 答：
 1、操作領域:軍事、外交、法律、資訊、與論、貿易與心理戰等。
 2、定義:美國國防部《2018國防戰略》:敵對勢力將以非武裝衝突方式,包括掠奪式經濟、宣傳、政治顛覆、代理人以及武力威脅等改變既有事實。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 14. 我國搜救責任區為何?
 答：
 依《行政院國家搜救指揮中心作業手冊》規定,我國搜救任務範圍以「臺北飛航情報區」區內為原則,臺灣海峽中線以西與中國大陸管轄區域重疊部分,除我國管轄區域外,原則以通知方式協請大陸有關單位辦理。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 15. 依「海洋委員會海巡署應變中心作業要點」所訂,本署海難應變中心開設權責區分為何?
 答：
 1、本署:我國臺北飛航情報區內發生海難事故估計有十五人以上傷亡、失蹤,災害有擴大之虞,經研判有開設必要者。
 2、分署:五人以上、未達十五人傷亡、失蹤或災害有擴大之虞時,轄管各分署及相鄰地區之分署視實際需要開設應變中心。
 3、巡防區:未達五人傷亡或失蹤時,由轄管各分署指導巡防區指揮部專案應變,並得請求艦隊分署(各機動海巡隊)支援。
 
-[Type:申論題]
+[Type:申論題|Category:專業]
 16. 貴官為烏石港安檢所留守主管,於颱風來襲時,發現外澳沙灘有一名衝浪客在戲水,請問貴官如何處置?請依據「勤務執行標準作業程序」將相關流程圖繪出,並引用相關法令;並請說明你認為未來在海巡「勤務執行標準作業程序」那些環節式適合導入AI輔助,可能帶來哪些風險與效益?
 答：
 1、各岸巡隊於接獲縣(市)政府警戒區域劃定通報後應即指揮所屬巡防人員,執行海岸、港口警戒區域內海釣管制、臨海海面查察及人員、車船入出等管制工作,執行前各級幹部應嚴格要求執勤人員穿著救生衣。
@@ -351,7 +394,7 @@ const rawDataString = `
 (流程處置)
 見下方流程圖
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 17. 貴官於巡防區勤務指揮中心擔任執勤員時,應與雷達作業組共同複視監控轄區海面目標,請試舉5種海面可疑目標徵候？
 答：
 1、由外海駛向岸際之目標。
@@ -360,7 +403,7 @@ const rawDataString = `
 4、航艇艦追緝之目標。
 5、多點成線或時有時無之小型(不明)目標。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 18. 貴官於勤務指揮中心擔任執勤員時,接獲雷達作業組回報,雷達於12浬外發現一目標持續向岸際移動,依據海岸巡防總局岸際雷達監偵海面可疑目標狀況處置要領,應如何處置？
 答：
 由外海駛向岸際(即外切)目標處置如下:
@@ -369,7 +412,7 @@ const rawDataString = `
 3、就目標當時距岸遠近,運用通聯器材,主動通報各機動巡邏站、岸置守望、督導兼巡邏組,發掘岸、港、澳可疑徵兆;另視目標於海上有無可疑徵候,通報責任區在航勤務艦艇前往執檢勤務。
 4、隨時掌握目標動態,並於每15分鐘記錄處置作為。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 19. 雷達之外在因素干擾有哪些?請列舉五項。
 答：
 1、自然現象產生之反射信號。
@@ -383,7 +426,7 @@ const rawDataString = `
 9、天線高度。
 10、天線配置之長短與間距。
 
-[Type:申論題]
+[Type:申論題|Category:專業]
 20. 雷達作業組依據岸際雷達偵獲目標之遠近鎖定上傳雷情系統,貴官擔任巡防區指管長,依據雷情傳遞作業責任區劃分哪些勤務區塊?
 答：
 1、距岸3浬至岸港(澳):
@@ -399,43 +442,43 @@ const rawDataString = `
 4、距岸12浬以外至雷達最大偵蒐距離範圍內之水域:
 由雷達作業組對國(內)外航線之船舶動態適切擴大偵蒐,必要時(如海上援救)由各級勤務指揮中心通報在航勤務艦艇、空中勤務總隊直升機採取至當勤務作為,並轉(回)報相關單位協處。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 21. 在執行驅離或登檢勤務時,面對不配合的目標船,指揮官下令使用「強制力」(如高壓水泵或器械)的核心前提為何?而在何種情況下必須立即停止使用?(請依據比例原則作答)
 答：
 1、啟動前提:須在「已先行告誡」且「無法以其他和平手段達成任務」(如廣播無效)時,始得使用,且不得逾越達成目的之必要程度。
 2、終止時機:當「執法目的已達成」(如對方停船或離開水域)或「威脅行為已消滅」時,應立即停止使用,避免執法過當衍生法律責任。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 22. 巡防機關執行海上救難搜救任務停止原則為何?
 答：
 1、失事位置確定且人員生還可能性消失,或水溫攝氏21度以下搜救48小時及攝氏21度以上搜救72小時未果者,即可停止搜救任務。(搜救起始時間,係以遇難發生起算,倘無法確定遇難發生時間,則以接獲第一次通報時起算)。
 2、經研判有持續搜救必要者,得依令延長任務時間。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 23. 請問「預置兵力」的定義?
 答：
 指單位接獲預警情資或預判狀況發生之前所採取之勤務作為要領如下:
 1、通報鄰近單位就近就便應處。
 2、視當前狀況進展,預判可能發生之事件,預先完成機動支援之勤務人力、裝備、器材及車輛之整備,並預置於狀況可能發生之地點附近,以利狀況發生時立即投入。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 24. 海岸巡防機關執行漁港安全檢查之法律依據為何?
 答：
 1、國家安全法。
 2、國家安全法施行細則。
 3、海岸巡防法。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 25. 請問海巡「勤務攔截部署」的概念?
 答：
 指兵力由內往外建立多重部署攔截網(初期、中程及擴大攔截等3層),拘束在特定地點後,形成包圍態勢,遂行掃蕩之概念。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 26. 目標監控應處原則為何?
 答：
 目標監偵處置,應就「偵知」、「辨識」、「掌握」、「採取措施」等執行程序,確實完成目標偵獲與研判,爭取反應縱深,達到提早預警之功效。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 27. 「三道監偵幕」係由巡防區藉由4CISR建立指揮管理系統,請問4CISR所指為何?
 答：
 1、指揮(Command)
@@ -445,15 +488,15 @@ const rawDataString = `
 5、監視(Surveillance)
 6、偵察(Reconnaissance)。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 28. 請列舉外國船舶或其他水上運輸工具,因緊急情形需進入港口情況為何?
 答：
-7、船舶已失去航行能力,無法在海上自行修復者。
-8、船舶載運人員重大傷病,有生命危險之虞者。
-9、發生風災等重大災害或海況惡劣有安全顧慮者。
-10、其他不可抗力或緊急狀況需進港者。
+1、船舶已失去航行能力,無法在海上自行修復者。
+2、船舶載運人員重大傷病,有生命危險之虞者。
+3、發生風災等重大災害或海況惡劣有安全顧慮者。
+4、其他不可抗力或緊急狀況需進港者。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 29. 巡防區每季對於轄區船舶及其他運輸工具實施船舶評鑑分類,乙類對象內容為何?
 答：
 乙類對象:無違法紀錄,但最近三年內情資顯示或曾因安檢發現下列情形之一者:
@@ -463,7 +506,7 @@ const rawDataString = `
 4、經常發現本國籍幹部船員配置不足。
 5、疑有涉及走私、偷渡、違反安全、漁業資源維護、海洋環境保護及保育等法令之其他跡象。
 
-[Type:申論題]
+[Type:申論題|Category:專業]
 30. 海岸巡防機關執行法定之檢查業務,請說明海巡機關人員實施港區船舶檢查方式為何?
 答：
 1、海巡機關人員於港區實施船舶檢查前,應事先蒐集、檢視受檢船舶之相關資料,足認其有可疑而有違法之虞時,始發動檢查。
@@ -474,12 +517,12 @@ const rawDataString = `
 6、受檢查船舶之人員不具威脅性時,應以柔性方式召集檢查,經檢查完畢後,應允許其自由活動。
 7、檢查過程發現可疑情形,有正當理由認有違法之虞時,始得會同船員檢查私人空間與物品。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 31. 毒樹果實理論
 答：
 是英美法系中的一項法律原則,比喻違法取得的證據(毒樹)所衍生出的次要證據(毒果)同樣不具證據能力,不得在法庭上使用,核心是防止非法搜查或取證行為的擴散,確保證據的合法性,即使衍生證據本身是合法取得的,也因其來源不潔而被排除,這填補了早期證據排除法則的不足。
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 32. 勤務裝備攜行規定
 答：
 1、執勤人員攜行器械,裝備原則如下:
@@ -496,7 +539,7 @@ const rawDataString = `
 3、可變更器械及裝備攜行種類權責為何人:
 其他勤務:由機關(構)首長視勤務性質、勤務地點及事實需要決定器械及裝備攜行種類。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 33. 依法執行職務遭侮辱或不當肢體行為時之處置
 答：
 1、法令依據:
@@ -511,19 +554,8 @@ const rawDataString = `
 (6)現場如有人員受傷,應立即送醫及驗傷,以作為相關事證。
 注意事項:
 蒐證人員應注意自身安全,旁邊應有警戒人員維護安全,以免遭受攻擊。
-通報
-依法執行職務遭侮辱或不當肢體行為時之處置
-岸巡隊
-通報
-全程蒐證並制止
-所在地警察機關支援協處
-派遣機動兵力,形成優勢
-無法制止時即時反制
-管制現場
-逮捕侮辱、施強暴脅迫或聚眾妨礙公務者,移送法辦
-將傷患送醫及驗傷以作為相關事證
 
-[Type:簡答題]
+[Type:簡答題|Category:專業]
 34. 海洋委員會海巡署船舶疑似私運高經濟價值水產品之處置要點
 答：
 壹、法令依據
@@ -563,7 +595,7 @@ const rawDataString = `
 (三)依況彈性調整勤務接獲走私情資後,評估海象調整適當巡防艦艇執勤,以利海象不佳時,仍可有效應處狀況。
 (四)協同執法共同查緝
 倘發現違法或可疑目標往大陸方向逃逸且追緝不及,應透過「兩岸協同執法機制」聯繫陸方執法單位共同查緝。
-四、情蒐偵查
+五、情蒐偵查
 (一)情資蒐報 掌握轄區注偵船舶動態,如蒐獲疑似走私高經濟價值水產品情資,供案件查處運用。
 (二)主動查處
 1、船舶進港後應針對船長等涉案人進行訪談筆錄,以及調閱VDR(VMS或AIS)、雷達等航行紀錄,並依所涉法令(規)函送主管機關(漁業署及關務署)裁處。
@@ -573,7 +605,7 @@ const rawDataString = `
 (二)安檢時應針對船載貨品,確認其品項及種類,並詳實記錄,若船載貨品數量龐大時,可實施抽檢,以單一箱次(樣品)完成採證、秤重(須去除冰、水)及影像存證等工作,再依現場所載貨品完成數量推估,另前述影像存證時,應將涉案之船體併同貨品秤重時錄製。
 (三)製作筆錄時,應詢問船長(主)航行運送相關資訊(含貨物流向、託運人等)。
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 35. 漁船(筏)逃避或拒絕安檢之處置
 答：
 1、法令依據:
@@ -589,32 +621,24 @@ const rawDataString = `
 注意事項:
 1、安檢人員發動檢查位置應在港區監視系統可涵蓋範圍內,若無港區監視系統,應以蒐證器材代替,避免無法舉證。
 2、行政罰法第26條第1項前段「一行為同時觸犯刑事法律及違反行政法上義務規定者,依刑事法律處罰之。」同條第2項「前項行為如經不起訴處分、緩起訴處分確定或為無罪、免訴、不受理、不付審理、不付保護處分、免刑、緩刑之裁判確定者,得依違反行政法上義務規定裁處之。」
-出港船筏
-通報
-雷達鎖定
-通報
-海巡艦艇
-安檢人員發動安檢
-船筏拒絕或逃避檢
-持續警示,告知泊靠,全程蒐證
-未發現其他不法情事
-執行登臨檢查
-發現其他不法情事
-依法定程序處理
-進港船筏
-通報
-港巡、監卸人員或備、待勤支援
-無正當理由,則依法
-函、移送
-副知當地航、漁政機關
 
-[Type:簡答題]
+[Type:簡答題|Category:法律]
 36. 風災期間地方應變中心已公告禁止限制區域,所轄港區在其公告範圍內,倘有船長告知因港區設備不足,欲至他港進行防颱作業,應如何應處?
 答：
 1、告知相關規定。
 2、請派駐地方應變中心聯絡官向指揮官報告,並請指揮官依權責裁定。
 3、倘該船出港,應落實掌握該船動態,並告知其目的港安檢所備便。
 4、倘地方應變中心指揮官否決其出港後,該船仍執意出港,則於以勸導必要時開立勸導單及舉發書並函送主管機關。
+
+[Type:簡答題|Category:專業]
+37. 岸巡隊勤務部署原則為何？
+答：
+1、拘束點：狀況初期派兵至岸際監控不法，運用地形先期拘束，俾後續緝捕任務。
+2、緝捕點：在目標已遭岸際雷達並預警通報狀況下，機動兵力到答岸際實施緝捕作為。
+3、攔截點：因應不法於岸際上岸，部署兵力於可能逃逸路線開設攔截點。
+4、管制哨：於外側重要聯外道路，設管制哨，實施道路人車管制，藉以避免不法集團接應逃竄。
+5、掃蕩區：藉前述勤務部署作為，完成封鎖、隔離等手段後，投入到達優勢兵力掃蕩殘餘不法。
+
 `;
 
 // 定義流程圖資料 (對應第16題)
@@ -708,9 +732,10 @@ flowchart TD
 `;
 
 let questionBank = [];
-let usedIndices = new Set();
-let currentIndex = -1;
+let quizQueue = []; // 用於隨機測驗的題目佇列
+let currentQuizTotal = 0; // 當前篩選條件下的總題數
 let currentQ = null;
+let currentIndex = -1; // 當前在 questionBank 中的 index
 
 // 初始化：解析題庫
 window.onload = function() {
@@ -728,7 +753,7 @@ window.onload = function() {
     document.getElementById('statsArea').style.display = 'block';
 };
 
-// Step 1: 解析函數
+// 解析題庫 (修正版，支援 Category 標籤)
 function parseQuestionBank() {
     const questions = rawDataString.split('[Type:');
     questionBank = [];
@@ -737,8 +762,20 @@ function parseQuestionBank() {
         if (!block.trim()) return;
         
         let typeEnd = block.indexOf(']');
-        let type = block.substring(0, typeEnd);
+        let typeInfo = block.substring(0, typeEnd);
         let content = block.substring(typeEnd + 1).trim();
+        
+        // 解析類型與分類 [Type:簡答題|Category:法律]
+        let type = "未分類";
+        let category = "一般";
+        
+        if (typeInfo.includes('|Category:')) {
+            const parts = typeInfo.split('|Category:');
+            type = parts[0];
+            category = parts[1];
+        } else {
+            type = typeInfo; // 向下相容舊格式
+        }
         
         // 分割題目與答案 (找 "答：")
         let parts = content.split('答：');
@@ -748,6 +785,7 @@ function parseQuestionBank() {
             
             questionBank.push({
                 type: type,
+                category: category,
                 q: qText,
                 a: aText,
                 diagram: null // 預設無圖
@@ -767,8 +805,18 @@ document.getElementById('btnReview').addEventListener('click', () => {
     document.getElementById('controlPanel').style.display = 'none';
     document.getElementById('reviewArea').style.display = 'block';
 
+    renderReviewList();
+    
+    mermaid.init();
+});
+
+// 渲染列表 (依據篩選條件)
+function renderReviewList() {
     const reviewContent = document.getElementById('reviewContent');
     reviewContent.innerHTML = ''; 
+
+    // 取得當前選擇的篩選器
+    const filterVal = document.querySelector('input[name="catFilter"]:checked').value;
 
     if (questionBank.length === 0) {
         reviewContent.innerHTML = '<p class="text-center text-muted">目前沒有題目資料。</p>';
@@ -776,10 +824,21 @@ document.getElementById('btnReview').addEventListener('click', () => {
     }
 
     questionBank.forEach((q, index) => {
+        // 篩選邏輯
+        if (filterVal !== 'all' && q.category !== filterVal) {
+            return;
+        }
+
         const itemDiv = document.createElement('div');
         itemDiv.className = 'card mb-3 shadow-sm review-item';
         itemDiv.setAttribute('data-id', index);
+        itemDiv.setAttribute('data-cat', q.category);
         
+        // 決定 Badge 顏色
+        let badgeClass = "bg-secondary";
+        if (q.category === "法律") badgeClass = "bg-law";
+        if (q.category === "專業") badgeClass = "bg-pro";
+
         let diagramHtml = '';
         if (q.diagram) {
             diagramHtml = `
@@ -797,13 +856,17 @@ document.getElementById('btnReview').addEventListener('click', () => {
 
         itemDiv.innerHTML = `
             <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <h5 class="review-q"><span class="badge bg-primary me-2">Q${index + 1}</span> [${q.type}]</h5>
+                <div class="d-flex justify-content-between align-items-start">
+                    <h5 class="review-q">
+                        <span class="badge ${badgeClass} badge-cat">${q.category}</span>
+                        <span class="badge bg-light text-dark border me-1">Q${index + 1}</span> 
+                        <span class="badge bg-warning text-dark badge-type me-2">${q.type}</span>
+                    </h5>
                     <button class="btn btn-sm btn-outline-primary btn-toggle-ans" onclick="toggleAnswer(${index})">
                         👁️ 顯示/隱藏答案
                     </button>
                 </div>
-                <p class="card-text fw-bold" style="white-space: pre-wrap;">${q.q}</p>
+                <p class="card-text fw-bold mt-2" style="white-space: pre-wrap;">${q.q}</p>
                 
                 ${diagramHtml}
 
@@ -823,8 +886,16 @@ document.getElementById('btnReview').addEventListener('click', () => {
         reviewContent.appendChild(itemDiv);
     });
     
-    mermaid.init();
-});
+    // 重新初始化 Mermaid (針對新插入的 DOM)
+    setTimeout(() => {
+       mermaid.init();
+    }, 100);
+}
+
+// 篩選器觸發
+window.filterQuestions = function(val) {
+    renderReviewList();
+}
 
 window.resizeDiagram = function(rangeInput, index) {
     const scale = rangeInput.value;
@@ -865,7 +936,9 @@ window.checkPractice = function(index) {
 let isAllVisible = false;
 document.getElementById('btnToggleAll').addEventListener('click', () => {
     isAllVisible = !isAllVisible;
-    questionBank.forEach((_, index) => {
+    // 只對目前可見的題目操作
+    document.querySelectorAll('.review-item').forEach(item => {
+        const index = item.getAttribute('data-id');
         const ansContainer = document.getElementById(`ans-container-${index}`);
         const practiceContainer = document.getElementById(`practice-container-${index}`);
         if(isAllVisible) {
@@ -882,16 +955,20 @@ document.getElementById('btnBackFromReview').addEventListener('click', () => {
     document.getElementById('reviewArea').style.display = 'none';
     document.getElementById('controlPanel').style.display = 'block';
     
-    if (usedIndices.size > 0 && currentQ) {
+    // 返回時若有進行中的測驗則顯示測驗區，否則顯示主畫面
+    if (quizQueue.length < currentQuizTotal && currentQ) {
         document.getElementById('quizArea').style.display = 'block';
     } else {
+        // 如果沒有進行中的測驗，顯示主選單與統計
+        showMainMenu();
         document.getElementById('statsArea').style.display = 'block';
     }
 });
 
+// 重設功能
 document.getElementById('btnReset').addEventListener('click', () => {
     if(confirm('確定要全部重設並重新開始測驗嗎？')) {
-        usedIndices.clear();
+        quizQueue = [];
         currentIndex = -1;
         currentQ = null;
         
@@ -900,42 +977,89 @@ document.getElementById('btnReset').addEventListener('click', () => {
         document.getElementById('resultArea').style.display = 'none';
         document.getElementById('btnSubmit').style.display = 'block';
         
-        document.getElementById('statsArea').style.display = 'none';
-        document.getElementById('quizArea').style.display = 'block';
-        document.getElementById('btnStart').disabled = true;
-        
-        nextQuestion();
+        // 恢復到初始狀態：顯示主選單，隱藏分類選單與測驗區
+        showMainMenu();
+        document.getElementById('statsArea').style.display = 'block';
+        document.getElementById('quizArea').style.display = 'none';
     }
 });
 
-document.getElementById('btnStart').addEventListener('click', () => {
+// 切換至分類選擇介面
+document.getElementById('btnStartMode').addEventListener('click', () => {
     if (questionBank.length === 0) {
         alert("題庫為空，請檢查解析！");
         return;
     }
-    document.getElementById('btnStart').disabled = true;
-    document.getElementById('statsArea').style.display = 'none';
-    document.getElementById('quizArea').style.display = 'block';
-    nextQuestion();
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('categoryMenu').style.display = 'block';
 });
 
-function nextQuestion() {
-    if (usedIndices.size >= questionBank.length) {
-        alert("恭喜！您已完成題庫中的所有題目！");
+// 顯示主選單 (Helper)
+function showMainMenu() {
+    document.getElementById('mainMenu').style.display = 'flex';
+    document.getElementById('categoryMenu').style.display = 'none';
+}
+
+// 開始測驗 (接收 scope 參數)
+window.startQuiz = function(scope) {
+    // 建立題目佇列 (Filtered Queue)
+    quizQueue = [];
+    questionBank.forEach((q, index) => {
+        if (scope === 'all' || q.category === scope) {
+            quizQueue.push(index);
+        }
+    });
+
+    if (quizQueue.length === 0) {
+        alert("選擇的分類沒有題目！請選擇其他範圍。");
         return;
     }
 
-    let idx;
-    do {
-        idx = Math.floor(Math.random() * questionBank.length);
-    } while (usedIndices.has(idx));
+    // 隨機洗牌
+    for (let i = quizQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [quizQueue[i], quizQueue[j]] = [quizQueue[j], quizQueue[i]];
+    }
+    
+    // 設定本輪總題數
+    currentQuizTotal = quizQueue.length;
 
-    usedIndices.add(idx);
-    currentIndex = idx;
-    currentQ = questionBank[idx];
+    // 切換介面：隱藏選單，顯示測驗區
+    document.getElementById('categoryMenu').style.display = 'none';
+    document.getElementById('statsArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'block';
+    
+    // 開始第一題
+    nextQuestion();
+};
+
+function nextQuestion() {
+    if (quizQueue.length === 0) {
+        alert("恭喜！您已完成本範圍內的所有題目！");
+        // 完成後回到主選單
+        showMainMenu();
+        document.getElementById('quizArea').style.display = 'none';
+        document.getElementById('statsArea').style.display = 'block';
+        return;
+    }
+
+    // 從佇列尾部取出一個索引 (不重複)
+    currentIndex = quizQueue.pop();
+    currentQ = questionBank[currentIndex];
+
+    document.getElementById('qCategoryBadge').innerText = currentQ.category;
+    // 設定顏色
+    let catClass = "bg-secondary";
+    if (currentQ.category === "法律") catClass = "bg-law";
+    if (currentQ.category === "專業") catClass = "bg-pro";
+    document.getElementById('qCategoryBadge').className = `badge badge-cat me-1 ${catClass}`;
 
     document.getElementById('qTypeBadge').innerText = currentQ.type;
-    document.getElementById('qProgress').innerText = `進度: ${usedIndices.size} / ${questionBank.length}`;
+    
+    // 計算已完成題數
+    let doneCount = currentQuizTotal - quizQueue.length;
+    document.getElementById('qProgress').innerText = `進度: ${doneCount} / ${currentQuizTotal}`;
+    
     document.getElementById('questionText').innerText = currentQ.q;
     document.getElementById('userAnswer').value = '';
     document.getElementById('userAnswer').disabled = false;
