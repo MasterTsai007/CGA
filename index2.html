@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海巡軍正43期-期末考</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Diff Match Patch Library (Google) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    <!-- Mermaid JS for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f0f2f5; padding-top: 0; }
+        
+        /* Main Container for Content */
+        .main-container { 
+            max-width: 900px; 
+            margin: 0 auto 40px auto; 
+            padding: 20px; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+        }
+
+        .btn-xl { padding: 10px 20px; font-size: 1.1rem; border-radius: 8px; }
+        
+        /* Sticky Header */
+        #stickyHeader {
+            position: -webkit-sticky; /* Safari */
+            position: sticky;
+            top: 0;
+            z-index: 1050; /* Higher than Bootstrap default navbars */
+            background-color: #f0f2f5; /* Same as body bg to cover content behind */
+            padding-top: 15px;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
+        }
+
+        .control-card {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid #dee2e6;
+        }
+
+        /* 差異樣式設定 */
+        .diff-ins { 
+            color: #dc3545; /* 紅色 */
+            text-decoration: line-through; /* 刪除線 (多餘/錯誤) */
+            font-weight: bold;
+            background-color: #ffe6e6; 
+            padding: 0 2px; 
+            border-radius: 3px; 
+        } 
+        
+        /* 缺漏樣式：藍色底色 */
+        .diff-missing { 
+            color: #0d6efd; 
+            font-weight: bold; 
+            background-color: #e7f1ff; 
+            padding: 2px 4px; 
+            border-radius: 4px; 
+            border: 1px dashed #0d6efd;
+        } 
+        
+        .result-box { white-space: pre-wrap; word-break: break-all; font-size: 1rem; line-height: 1.8; }
+        .card-header-custom { background: linear-gradient(45deg, #2c3e50, #4ca1af); color: white; border-radius: 12px 12px 0 0 !important; }
+        .badge-type { font-size: 0.9rem; padding: 6px 10px; }
+        #statsArea { display: none; transition: all 0.5s; }
+        #quizArea { display: none; }
+        #reviewArea { display: none; } 
+        #modeSelectionArea { display: none; } /* 新增：模式選擇區 */
+        .step-indicator { font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
+        
+        /* Table styles for diff */
+        .diff-table th { width: 15%; white-space: nowrap; vertical-align: top; background-color: #f8f9fa; }
+        .diff-table td { vertical-align: top; }
+        
+        /* Review item style */
+        .review-item { border-left: 4px solid #0d6efd; background-color: #fff; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .review-q { font-weight: bold; color: #333; margin-bottom: 12px; font-size: 1.1rem; }
+        .review-a-container { margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc; }
+        .review-a-text { color: #555; white-space: pre-wrap; line-height: 1.6; }
+        .review-practice-area { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .diff-result-mini { margin-top: 10px; padding: 10px; background-color: #fff; border: 1px solid #dee2e6; border-radius: 5px; }
+        
+        /* Diagram Container */
+        .diagram-wrapper {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-top: 15px;
+            text-align: center;
+            overflow: hidden; 
+        }
+        .zoom-controls {
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .zoom-controls input {
+            width: 150px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        .mermaid {
+            transform-origin: top center;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Wake Lock Switch */
+        .form-switch .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+        .wakelock-status { font-size: 0.85rem; margin-left: 10px; color: #6c757d; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<!-- Sticky Header Area -->
+<div id="stickyHeader">
+    <div class="control-card">
+       
+        <!-- Control Buttons -->
+        <div id="controlPanel">
+            
+            <!-- Wake Lock Control (Fixed Here) -->
+            <div class="d-flex justify-content-center align-items-center bg-light rounded py-1 px-3 border" style="width: fit-content; margin: 0 auto;">
+                <div class="form-check form-switch m-0 d-flex align-items-center">
+                    <input class="form-check-input my-0" type="checkbox" id="wakeLockSwitch">
+                    <label class="form-check-label fw-bold ms-2 small" for="wakeLockSwitch" style="cursor:pointer; margin-top: 2px;">螢幕常亮 (防止鎖定)</label>
+                </div>
+                <span id="wakeLockStatus" class="wakelock-status" style="font-size: 0.75rem;">(關閉)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="main-container">
+        
+
+
+    <div class="control-card">
+        <div class="text-center mb-2">
+            <h4 class="fw-bold text-primary m-0">👮‍♂️ 海巡軍正43期-期末考</h4>
+            <p class="text-muted small m-0">整合題庫 (法律+專業)</p>
+        </div>
+
+        <!-- Control Buttons -->
+        <div id="controlPanel">
+            <div class="d-flex flex-wrap gap-2 justify-content-center mb-2 align-items-center">
+                <!-- 視覺用的匯入狀態按鈕 -->
+                <button id="btnImport" class="btn btn-outline-secondary btn-sm" disabled>✅ 題庫載入中...</button>
+                <button id="btnReset" class="btn btn-danger btn-sm">🔄 全部重設</button>
+                <button id="btnReview" class="btn btn-info text-white btn-sm">📖 完整題庫</button>
+                <button id="btnStart" class="btn btn-primary btn-sm px-4">🚀 隨機測驗</button>
+            </div>
+            
+            
+
+    </div>
+</div>
+
+
+
+
+        <!-- Stats Display -->
+        <div id="statsArea" class="alert alert-success text-center mx-auto" style="max-width: 600px;">
+            <h5 class="alert-heading mb-2">📚 題庫匯入完成！</h5>
+            <div class="d-flex justify-content-center gap-4">
+                <span>⚖️ 法律題：<strong id="countLaw">0</strong></span>
+                <span>⚓ 專業題：<strong id="countProf">0</strong></span>
+            </div>
+            <hr>
+            <div class="text-center">總計：<strong id="countTotal">0</strong> 題</div>
+            <div class="mt-3 text-muted small">
+                請點選上方「隨機測驗」按鈕開始
+            </div>
+        </div>
+
+        <!-- Mode Selection Area -->
+        <div id="modeSelectionArea" class="mt-4 text-center animate__animated animate__fadeIn">
+            <h5 class="fw-bold text-dark mb-3">請選擇出題範圍：</h5>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button class="btn btn-outline-primary btn-lg" onclick="startQuizMode('all')">📚 全部混合</button>
+                <button class="btn btn-outline-success btn-lg" onclick="startQuizMode('law')">⚖️ 僅 法律</button>
+                <button class="btn btn-outline-warning btn-lg text-dark" onclick="startQuizMode('professional')">⚓ 僅 專業</button>
+            </div>
+            <button class="btn btn-link text-muted mt-2" onclick="cancelModeSelection()">取消</button>
+        </div>
+
+        <!-- Quiz Area (Random Mode) -->
+        <div id="quizArea">
+            <div class="card border-0 shadow">
+                <div class="card-header card-header-custom d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <span id="qTypeBadge" class="badge bg-warning text-dark badge-type me-2">問答/申論</span>
+                        <span class="text-white-50 small">隨機出題模式</span>
+                    </div>
+                    <span id="qProgress" class="badge bg-light text-dark">剩餘題目: 0</span>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- Question -->
+                    <h5 class="card-title text-secondary mb-3">題目：</h5>
+                    <div class="alert alert-light border border-secondary border-opacity-25 shadow-sm">
+                        <h4 id="questionText" style="line-height: 1.5; white-space: pre-wrap;">題目載入中...</h4>
+                    </div>
+                    
+                    <!-- Answer Input -->
+                    <div class="mb-3 mt-4">
+                        <label for="userAnswer" class="form-label fw-bold text-primary">✍️ 您的答案：</label>
+                        <div class="form-text mb-2">請注意：答案中的項次編號（如 1.、2.、(1)、一、二）均列入比對範圍，請務必輸入。</div>
+                        <textarea class="form-control fs-5" id="userAnswer" rows="8" placeholder="請在此輸入答案..."></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2" id="actionArea">
+                        <button id="btnSubmit" class="btn btn-success btn-xl shadow-sm">送出答案並比對</button>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="resultArea" class="mt-4 animate__animated animate__fadeIn" style="display:none;">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white fw-bold">📊 比對結果</div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 diff-table">
+                                        <tbody>
+                                            <tr>
+                                                <th class="text-end">標準答案</th>
+                                                <td class="result-box bg-light text-secondary" id="resStandard"></td>
+                                            </tr>
+                                            <tr>
+                                                <th class="text-end">您的答案</th>
+                                                <td class="result-box" id="resUser"></td>
+                                            </tr>
+                                            <tr class="table-warning">
+                                                <th class="text-end text-dark">差異分析<br><span class="badge bg-secondary badge-type">標點忽略</span></th>
+                                                <td class="result-box bg-white" id="resDiff"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-top-0 p-3">
+                                <div class="alert alert-secondary py-2 small mb-0">
+                                    <i class="bi bi-info-circle"></i> 說明：<span class="diff-ins">紅色刪除線</span> 代表多餘或錯誤的內容；<span class="diff-missing">藍色底色文字</span> 代表您漏掉的標準答案內容（含編號）。黑色的標點符號代表系統已忽略其差異。
+                                </div>
+                                <!-- Next Button -->
+                                <div class="d-grid mt-3">
+                                    <button id="btnNext" class="btn btn-outline-primary btn-lg">➡️ 下一題 (Next)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Area (Practice Mode) -->
+        <div id="reviewArea">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                <h4 class="fw-bold text-dark"><i class="bi bi-book"></i> 完整題庫與練習</h4>
+                <div class="d-flex align-items-center gap-2">
+                    <button id="btnToggleAll" class="btn btn-sm btn-outline-secondary">全部顯示/隱藏答案</button>
+                    <button id="btnBackFromReview" class="btn btn-sm btn-dark">⬅️ 返回主畫面</button>
+                </div>
+            </div>
+            <div class="alert alert-info py-2 small">
+                <i class="bi bi-info-circle"></i> 提示：您可以點擊每題下方的「隱藏答案」進行自我練習。
+            </div>
+            <!-- Filter for Review -->
+            <div class="mb-3">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="reviewFilter" id="filterAll" autocomplete="off" checked onclick="filterReview('all')">
+                    <label class="btn btn-outline-secondary" for="filterAll">全部顯示</label>
+
+                    <input type="radio" class="btn-check" name="reviewFilter" id="filterLaw" autocomplete="off" onclick="filterReview('law')">
+                    <label class="btn btn-outline-secondary" for="filterLaw">只看法律</label>
+
+                    <input type="radio" class="btn-check" name="reviewFilter" id="filterProf" autocomplete="off" onclick="filterReview('professional')">
+                    <label class="btn btn-outline-secondary" for="filterProf">只看專業</label>
+                </div>
+            </div>
+            <div id="reviewContent">
+                <!-- Javascript will populate this -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// 初始化 Mermaid
+mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+
+/**
+ * 法律題庫 (來自: 軍正43期第二次階段測驗-法律科目0105.docx)
+ */
+const rawDataLaw = `
+[Type:簡答題]
+行政院下屬何單位負責決定災害防救之基本方針、核定災害防救基本計畫及中央災害防救業務主管機關之災害防救業務計畫等事項？
+答：
+中央災害防救會報。
+
+[Type:簡答題]
+本署海難應變中心開設權責區分為何？
+答：
+1. 本署：我國臺北飛航情報區內發生海難事故估計有十五人以上傷亡、失蹤，災害有擴大之虞，經研判有開設必要者。
+2. 分署：五人以上、未達十五人傷亡、失蹤或災害有擴大之虞時，轄管各分署及相鄰地區之分署視實際需要開設應變中心。
+3. 巡防區：未達五人傷亡或失蹤時，由轄管各分署指導巡防區指揮部專案應變，並得請求艦隊分署(各機動海巡隊)支援。
+
+[Type:簡答題]
+我國搜救責任區為何？
+答：
+依《行政院國家搜救指揮中心作業手冊》規定，我國搜救任務範圍以「臺北飛航情報區」區內為原則，臺灣海峽中線以西與中國大陸管轄區域重疊部分，除我國管轄區域外，原則以通知方式協請大陸有關單位辦理。
+
+[Type:簡答題]
+岸際民眾落水救援事件，本署與消防署權責劃分為何？
+答：
+依據行政院災害防救委員會98年12月4日決議，基於災害搶救政府一體之原則，海巡或消防機關接獲岸際民眾落水報案時，皆應要求所屬主動指派搜救人員攜帶救災裝備趕往現場，並由先到場人員擔任初期指揮官，至後續雙方人員均到場後，則應相互協調出最佳救援方式共同執行，俾提升整體搶救效能。
+
+[Type:簡答題]
+風災和海難之中央災害防救業務主管機關分別是哪個部會？
+答：
+風災：內政部、海難：交通部。
+
+[Type:簡答題]
+列舉三個與我國搜救責任區相鄰之國家？
+答：
+日本、中國、菲律賓。
+
+[Type:申論題]
+2021年10月氣象局發布「圓規」海上颱風警報，並針對巴士海峽發布警戒，預測路徑持續往西移動，雖然東北海域未列入警戒範圍，但在颱風外圍環流影響下，宜蘭岸際已出現長浪，16名遊客在宜蘭南澳神秘沙灘海蝕洞受困，最後被直昇機救出。
+在此案例中，搜救機關是否可向獲救者索取搜索費用？
+答：
+依據《災害防救法》第30條規定，向獲救者收取搜救所生費用，以各級政府成立災害應變中心後且劃設警戒區，並由各級災害應變中心進行搜救而獲救者為前提。
+本案倘宜蘭縣政府未成立應變中心及劃設警戒區域，則無法命獲救者繳納搜索費用，反之，宜蘭縣政府如已成立應變中心且劃設警戒區域，則搜救衍生費用則可以書面命獲救者繳納。
+
+[Type:簡答題]
+依「行政院國家搜救指揮中心作業手冊」，我國搜救責任區為何？
+答：
+臺北飛航情報區
+
+[Type:簡答題]
+依「災害防救法」第3條規定，震災和空難之中央災害防救業務主管機關分別是哪個部會？
+答：
+震災：內政部、空難：交通部。
+
+[Type:簡答題]
+依「災害防救法施行細則規定」第2條規定及「海岸巡防機關執行海上救難作業程序」，海難定義為何？
+答：
+指船舶發生故障、沉沒、擱淺、碰撞、失火、爆炸或其他有關船舶、貨載、船員或旅客之非常事故。
+
+[Type:簡答題]
+110年10月5日尚比亞籍「利迪亞(LIDIA)」貨輪於東沙環礁避風，隨後因引擎故障船員棄船擱淺，船員由管轄搜救協調中心派遣直升機吊掛救援，請問東沙海域屬於哪個搜救責任區管轄？
+答：
+香港搜救責任區
+
+[Type:簡答題]
+中央氣象署發布東部及北部地區海上陸上颱風警報，中央成立風災應變中心，本署執行台東三仙台岸際勸離勤務，係依何機關公告劃設警戒區域執行之?
+答：
+台東縣政府
+
+[Type:簡答題]
+「凱米」颱風期間南部地區發生9起海難事件，其中8艘貨輪擱淺於高雄、屏東岸際，請問若船舶所有人未依限期採取必要應變措施，主管機關交通部航港局可依何項法規，逕行採取必要措施，以防止海洋污染等二次災害發生。
+答：
+「商港法」第53條
+
+[Type:申論題]
+高雄旗津沙灘發生民眾水上遊憩溺水事件，本署及消防隊均接獲通報趕赴現場救援，試問海巡與消防單位針對岸際救生案件如何分工？
+答：
+依行政院中央災害防救委員會98年12月4日「海岸岸際民眾落水救援事件權責劃分事宜會議」決議，基於災害搶救政府一體之原則，海巡或消防機關接獲民眾落海報案時，皆應要求所屬主動指派搜救人員攜帶救災裝備趕往現場，並由先到場人員擔任初期指揮官，後續雙方人員到場後，應相互協調最佳救援方式共同執行，俾提升整體搶救效能。
+
+[Type:申論題]
+發生船舶或航空災難事故，請問搜救能量派遣原則為何?
+答：
+依行政院國家搜救指揮中心作業手冊第三章第二節，搜救派遣原則如下：
+1. 人命優先原則：有立即性之生命危害案件者，派遣最迅速、最有效之資源前往救援。
+2. 快速就近原則：以時間及地點考量，派遣適當搜救單位執行。
+3. 輕重緩急原則：較嚴重之事故先行派遣救援。
+4. 資源確保原則：派遣足夠之搜救資源，及預備充足之備用資源。
+5. 經濟節約原則：以完成任務為目標，派遣任務須珍惜各項救災資源。
+6. 搜救資源運用原則：陸上搜救資源運用依序為消防、警政、空勤總隊、國軍、民間等單位，海上搜救資源運用依序為海巡、空勤總隊、國軍、民間等單位；若狀況特殊或應事實需要(超出單位救援能力或裝備故障無其他備援支援)時，則視狀況派遣，不受前述之限制。
+
+[Type:簡答題]
+ISPS 章程是國際保全章程，其法條規定強制適用在那些設施上?
+答：
+航行國際線船舶及有國際線船舶停靠的港口設施。
+
+[Type:簡答題]
+保全等級依照主管機關要求，可視保全情況進行升級。請問保全等級分為哪三級?
+答：
+1. 保全等級1: 普通狀態
+2. 保全等級2: 加強狀態
+3. 保全等級3: 特殊狀態。
+
+[Type:簡答題]
+各類型之港口設施保全等級可採取的六種保全措施中。 請列出其中三種保全措施?
+答：
+1. 船舶物料交付
+2. 非隨身行李之裝卸
+3. 監視港口設施保全
+4. 進入港口設施
+5. 港口設施內之限制區域
+6. 貨物裝卸
+
+[Type:簡答題]
+港口設施安全評估應考慮所有之保全威脅，包括章程列出之九種類型之保全事件。 請列出其中四種威脅:
+答：
+1. 對港口設施或船舶之損壞或破壞，例如透過爆炸裝置、縱火、破壞或惡意行爲
+2. 劫持或奪取船舶或船上人員
+3. 損壞貨物、船舶關鍵設備或系統或船舶物料
+4. 未經允許進入或使用，包括存在偷渡者
+5. 走私武器或設備，包括大規模殺傷性武器
+6. 使用船舶運輸企圖製造保全事件之人及/或其設備
+7. 利用船舶本身做為製造損壞或破壞之武器或方式
+8. 從海上攻擊停靠或錨泊之船舶
+9. 在海上攻擊船舶
+
+[Type:簡答題]
+ISPS 國際保全章程適用在我國的國際商港及工業港，請列出我國7大國際商港?
+答：
+基隆港、臺北港、蘇澳港、臺中港、高雄港、安平港及花蓮港
+
+[Type:申論題]
+完成四個小時的ISPS章程介紹後，請敘述您所了解的ISPS章程是甚麼?
+答：
+（開放式作答，重點在於說明 ISPS 為加強海上保全、預防恐怖攻擊的國際性公約，規範船舶與港口設施之保全責任與評估作業。）
+
+[Type:簡答題]
+海巡機關辦理漁船（筏）及遊艇安全檢查快速通關安檢勤務區分種類為何？
+答：
+1. 目視航行。
+2. 申報服務。
+3. 發動檢查。
+
+[Type:簡答題]
+某年月日，貴官任職於新北市龜吼漁港安檢所，當天下午15時一艘籠具漁船進港載有蟳蟹漁獲物，請問應注意那些事項？
+答：
+1. 注意蟳蟹捕撈殼寬：五種經濟蟹類是否符合殼寬規定。
+2. 注意抱卵母蟹禁漁期：10月份為抱卵母蟹禁漁期間，需確認是否有捕獲抱卵母蟹。
+
+[Type:簡答題]
+安檢人員實施安檢時，若遭船長惡意強行載運出港，可能違反那幾項法規？
+答：
+1. 刑法135條妨礙公務
+2. 刑法302條妨害自由
+3. 海岸巡防法第6條第3項規避、妨礙、拒絕檢查。
+
+[Type:簡答題]
+請問船筏評鑑分類之丁類對象所指為何？
+答：
+1. 娛樂漁業漁船。
+2. 載有大陸船員入出港之船舶。
+3. 兼營珊瑚漁業漁船。
+4. 依「臺灣地區漁船航行至大陸地區許可及管理辦法」規定得航行至大陸地區之漁船。
+5. 依「漁業人僱用私人武裝保全人員辦法」報備僱用私人武裝保全人員之漁船。
+6. 其他法規明定應主動檢查之船舶或其他運輸工具。
+
+[Type:簡答題]
+大陸船舶未經許可進入臺灣地區禁止水域，應如何處置？
+答：
+進入禁止水域者，強制驅離；可疑者，命令停船，實施檢查。驅離無效、涉及走私或從事非法漁業行為者，扣留其船舶、物品及留置其人員。
+
+[Type:申論題]
+司法警察機關於犯罪偵查實務中，雖「無搜索票」仍得逕行搜索之情況及程序為何，試申論之？
+答：
+1. 附帶搜索：司法警察官或司法警察逮捕被告、犯罪嫌疑人或執行拘提、羈押時，雖無搜索票，得逕行搜索其身體、隨身攜帶之物件、所使用之交通工具及其立即可觸及之處所。
+2. 緊急情況下之逕行搜索：
+司法警察官或司法警察，雖無搜索票，得逕行搜索住宅或其他處所之情形：
+(1) 因逮捕被告、犯罪嫌疑人或執行拘提、羈押，有事實足認被告或犯罪嫌疑人確實在內者。
+(2) 因追躡現行犯或逮捕脫逃人，有事實足認現行犯或脫逃人確實在內者。
+(3) 有明顯事實足信為有人在內犯罪而情形急迫者。
+(4) 檢察官於偵查中確有相當理由認為情況急迫，非迅速搜索，二十四小時內證據有偽造、變造、湮滅或隱匿之虞者，得逕行搜索，或指揮檢察事務官、司法警察官或司法警察執行搜索，並層報檢察長。
+(5) 前二項搜索，由檢察官為之者，應於實施後三日內陳報該管法院；由檢察事務官、司法警察官或司法警察為之者，應於執行後三日內報告該管檢察署檢察官及法院。法院認為不應准許者，應於五日內撤銷之。
+(6) 前二項搜索，執行後未陳報該管法院或經法院撤銷者，審判時法院得宣告所扣得之物，不得作為證據。
+3. 同意搜索：經受搜索人出於自願性同意者，得不使用搜索票。但執行人員應出示證件，並將其同意之意旨記載於筆錄。
+
+[Type:申論題]
+颱風或天候惡劣時，當地縣（市）政府己劃定警戒區域，海巡執勤人員對岸際逗留、親退等活動之民眾該如何處置？
+答：
+1. 應善盡勸導責任，並以言詞告知該地區業經縣（市）政府劃定公告為警戒區域，違法進入或逗留，依災害防救法第55條第1項第2款，可處新童幣5萬元以上25 萬元以下罰鍰外，另將予強制執行。
+2. 如民眾仍欲進入或繼續於岸際、港口等警戒區域逗留觀浪、檢拾漂「流木或從事釣魚等活動，應立即開立違反災害防救法勸導書表給予當事人，經勸導仍不聽從者，除開立舉發單，並依違反災害防救法第30條第1項第2款檢具相關事證（相片、錄音、錄影帶）函送縣（市）政府，另依行政執行法第36及37條，採取直接強制手段禁止其進入或命其離去，惟仍應注意比例原則之適用。
+3. 視現場狀況，向地方縣（市）政府應變中心指揮官反應，請其調派能量共同執行相關勸導、舉發及函送等作為。
+
+[Type:簡答題]
+請試舉出5種常見走私管道?
+答：
+1. 海上丟包。
+2. 近岸搶灘。
+3. 海上接駁。
+4. 地道輸送。
+5. 漁貨掩護。
+6. 改造漁船。
+
+[Type:簡答題]
+遇有走私、偷渡等重大案件時，應採取何種通報方式?
+答：
+邊處置邊通報。
+
+[Type:簡答題]
+請舉出3項有關「船筏外觀」的可疑徵候?
+答：
+1. 船舶吃水情形與漁獲量不成比例，或有船身左右不平衡者。
+2. 船身有嚴重碰撞破損現象者。
+3. 船身周邊裝有導電設備者或懸掛繩索於水中者。
+4. 船名四週有釘過之洞眼痕跡或不成比例之封口痕跡者。
+5. 藉故機器故障或船艙進水等理由，逃避檢查者。
+6. 舊船之某部分螺釘、木板新置者。
+7. 船名經常更換者。
+8. 船齡較久之破舊木船，僅能維持機器之堪用者。
+9. 船齡久而破舊，卻刻意油漆粉飾表面者。
+10. 艙內和艙面尺寸不符且懸殊很大者。
+11. 油櫃、水櫃乾燥，而內外尺寸差距很大者。
+12. 船名及編號模糊不清者。
+13. 油櫃或水櫃之固定橫木螺絲有鬆動現象者。
+14. 國旗標幟四週有釘痕或有改裝變更現象者。
+
+[Type:簡答題]
+請舉出3項有關「船員言行」的可疑徵候?
+答：
+1. 船員受檢時神色緊張坐立不安，甚至語無倫次，答非所問者。
+2. 船員受檢時故意製造事端，無理取鬧，甚至檢查時間稍久，即以不便民、擾民、刁難口吻相向，企圖影響檢查人員心理者。
+3. 藉故船員急病，匆忙逃避檢查者。
+4. 船員受檢時一反常態，對檢查人員特別友善，甚至攀交情，套關係者。
+5. 發現船員身上攜帶違禁品或外國（或大陸）物品者。
+6. 注檢船船員被隔離問話時，神色慌張，供詞矛盾，甚至手腳顫抖者。
+7. 船員受檢時故作鎮定、沉著狀，甚至高歌、談笑、聊天或談論他事者。
+8. 船員對檢查人員所檢查之處所，眼光表現特別敏感或神色緊張者。
+9. 甲類一般漁船，搭載具前科船員出港者。
+10. 船員穿著服裝與漁撈作業模式不符者。
+11. 船員對漁獲量少或無漁獲量，表情上無動於衷者。
+12. 船員異動頻繁者。
+
+[Type:簡答題]
+我國毒品走私來源地大多來自何處?
+答：
+主要來自東南亞、金三角地帶(緬甸、寮國及泰國)。
+
+[Type:申論題]
+台灣為海島地形，海岸線綿長，防杜走私不易，由於社會型態改變，舉凡槍械、彈藥、毒品、菸品、鳥禽、動（植）物等均為走私的標的物。不法分子為貪圖暴利，以各種手段，從海上、空中私運國內，不僅直接影響國家稅收，破壞經濟政策，間接也影響了工商發展及民眾生活、社會風氣與國家形象。貴官從事海岸巡防工作多年，深知惟有瞭解並鑽研走私的時機與模式，方能掌握機先，制敵勝敵，請依個人所學及工作經驗回答下列問題？
+走私之時機為何？
+走私模式為何？
+請以1項走私模式說明其內涵為何？
+答：
+依據本題題意，個人書寫答案分述如下：
+走私時機如下：
+市場需求增加，尤以民間節慶為甚。
+海上聚眾活動發生，海巡人力不足時。
+海域、海岸重大事件發生，海巡勤務產生間隙時。
+惡劣天候、夜暗，警戒監視困難時。
+海象平穩，利於船隻航行時。
+每日漲潮船筏容易登岸時。
+岸際地物改變，或沿海工程興建時。
+走私模式如下：
+海上接駁裝卸私貨
+以快艇走私
+海上丟包
+利用船筏近岸搶灘
+以魚貨掩護規避檢查
+改造漁船裝設密窩，藏匿私貨
+海上工作船舶走私
+利用沿岸地形地物藏運
+利用沉箱走私
+利用地道輸送方式
+利用管筏空隙走私
+利用改裝之舢舨、保麗龍船或浮板從事小額貿易
+個人試舉1項走私模式內涵說明如下： (僅舉1例即可)
+海上接駁裝卸私貨：
+即利用一般商船貨輪或大型漁船（俗稱母桶）將私貨載運至公海上約定地點等候，由我國籍漁船、舢舨以事先約定之聲光信號或通聯頻道識別後，接駁裝卸私貨運回國內。
+以快艇走私：
+利用航速快之我國籍（或無籍）快艇（俗稱黑金鋼）載運私貨，以躲避緝私艦艇的追緝，再將私貨以點放方式，分散裝卸予近岸接駁之小型船筏、舢舨，趁機搶灘上岸。     
+海上丟包：
+利用商（漁）船將私貨運至領海內特定地點，將私貨以防水塑膠袋包好後拋入海中，並繫上大型浮球或浮標，使其不致下沉並作為標識位置之用，然後再派漁船出海打撈偷運上岸。
+利用船筏近岸搶灘：
+利用船筏混於一般作業漁船中出海，伺機接駁私貨（或將私貨分藏於管狀膠筏之管內）後，俟機從沿海沙洲或溝渠搶灘登陸，再以小型貨車迅速將私貨載離。
+以魚貨掩護規避檢查：
+將私貨放置於船艙底層，上面再覆蓋大批魚貨及碎冰以為掩飾，使緝私人員不易察覺，進入漁港後，俟入夜再以卸魚貨為名，行搬卸私貨之實。
+改造漁船裝設密窩，藏匿私貨：
+不法船隻為逃避安檢人員查緝，以變造密窩（艙）之方式，將私貨藏放其中，並將開口封閉，俟進港後，再伺機取出。
+海上工作船舶走私：
+利用海上工作船或工作平台底層空艙藏運私貨，並以進行海岸工程之名，行走私之實，亦有發現將私貨藏匿於水泥沉箱之中者。
+利用沿岸地形地物藏運：
+私貨載運入境後，利用沿岸之沙洲、工寮、蚵架、防空洞、防風林或挖設之地道藏放，以逃避海巡人員查察。
+利用沉箱走私：
+利用大小與一般膠筏相仿，外觀酷似棺材之鐵箱子（俗稱鐵棺材）置於漁船後以纜繩拖運至近岸擱淺，俟退潮後使鐵箱坐灘，再俟機僱工將鐵箱內之私貨搬走。
+利用地道輸送方式：
+不法分子先於港內挖掘一條通往住宅或倉庫之地道（亦有加裝輸送帶者），漁船藏運私貨返港後，將船靠在地道口旁，利用較大型漁船停靠其外遮蔽，再從所私設密窩、密艙口（船舷或船尾）將私貨輸送入住宅或倉庫。
+利用管筏空隙走私：
+將私貨以繩索串聯後（俗稱灌臘腸）逐一塞進大型管筏之中空管隙藏置，並將入口封閉偽裝，俟入港後再伺機將私貨整串取出。
+利用改裝之舢舨、保麗龍船或浮板從事小額貿易：金門、馬祖地區因距離中國大陸較近，中國大陸漁民利用夜間退潮、視線不良之際，以改裝之舢舨走私牛、羊，或以保麗龍船、浮板載運農產品，於金馬地區淺水潮間帶從事小額貿易活動。
+
+海巡署查獲兩艘我國籍甲、乙漁船受託載送在菲律賓設廠生產的「白牌香菸」(在台灣有註冊的香菸)回國。甲船在距基線20浬處，乙船在距基線11浬處，均載有100箱香菸，欲走私返國。試問兩船的處罰依據？
+擬答：
+甲船，違反《菸酒管理法》第46條運輸非屬自用私菸，「販賣、運輸、轉讓或意圖販賣、運輸、轉讓而陳列或貯放私菸、私酒者，處新臺幣三萬元以上五十萬元以下罰鍰。」。私菸依該法第6條第1項第5款之數量，故以私菸論。且依據行政罰法第6條第2項領域外的我國籍漁船具有管轄權。
+乙船，違反《菸酒管理法》第45條第2項輸入香菸罪，「輸入私菸、私酒者，處三年以下有期徒刑，得併科新臺幣二十萬元以上一千萬元以下罰金。」因為該船已越過領海外界線，故屬於從境外進入境內，故應處以該法。
+`;
+
+/**
+ * 專業題庫 (來自: 軍正43期第二次階段測驗-專業科目0105.docx)
+ * 已校對並補上編號 (1. 2. 3...)
+ */
+const rawDataProf = `
+[Type:簡答題]
+題目1(刺網類):刺網按其使用水層之深淺以及漁法之不同可分為哪幾種作業方式?
+答:
+底刺網(Bottom gill net )、浮刺網(Surface gill net )、流刺網(Drift net )、旋刺網(Encircled gill net )、定刺網(Fixed gill net )
+
+[Type:簡答題]
+題目2(拖網類):單船拖網之網具包含一囊兩袖之漁網與兩條甚長之曳綱，並各繫附一塊網板，請說明網板的功用與原理為何?
+答:
+1. 網板之功用:在使網具沉降於水底，同時兩塊網板藉船前進所受之水壓作用，而向左右水平展開，擴大網口。
+2. 網板之原理: 網板之原理與機翼相同。機翼係以接近水平狀態使用，而獲得垂直向上之揚力效果。網板則卻係垂直使用，以獲致水平展開之效果。兩者獲致之效果原理相同，唯方向相異而已。
+
+[Type:簡答題]
+題目3(定置網類):定置網漁業相異於其他漁船漁業之處，請舉出5項 。
+答:
+1. 可漁獲多種魚種。
+2. 網具敷設後，維護費少，整體而言，資金少，卻獲利豐厚。
+3. 漁獲物損傷少，漁獲鮮度佳，魚價高。
+4. 與蓄養箱網併用，漁獲得視市場需求調節出售。
+5. 非濫獲性，不致使資源枯竭。
+6. 作業不具危險性，老年者亦可從事。
+7. 漁場靠近岸邊，漁撈作業，不必在大洋上追逐魚群，為一省能源之漁業。
+
+[Type:簡答題]
+題目4(圍網類):巾著網現今只存數組漁船持續作業，請說明造成巾著網漁業沒落之原因?
+答:
+1. 造成巾著網漁業沒落之原因
+2. (1) 洄游性漁業易受海況變化的影響，生產量不穩定
+3. (2) 船員人數過多，收入減少
+4. (3) 由於漁船小，漁場受限於近海，年產量無法突破，僅佔我總漁獲量3％。
+
+[Type:簡答題]
+題目5(敷網類):下圖為何種漁法之漁具配置圖?
+[圖片: 鎖管棒受網漁具配置圖]
+答:
+鎖管棒受網
+
+[Type:申論題]
+刺網雖然構造簡單，但為了刺網漁業長久的發展，有那些問題值得加以探討? 其內容與原因為何?
+答:
+一.混獲的問題
+刺網作業時，除可捕獲魚類外，偶而亦有海豚、鳥類等動物上網，而北太平洋流刺網漁場，更有混獲有鮭、鱒魚之問題，因此公海刺網作業受到禁止。目前雖沿近海流刺網未加禁止，但業者仍應儘量避開有上述動物棲息之海域，否則將來刺網漁業之發展將仍受到國際保育團體之反對。
+二.流失、廢棄之網具所引發對資源破壞之問題                            
+幽靈網具:刺網作業流失的網具，或漁民任意將不堪使用網具的海拋，由於合成織維不易腐壞，將繼續纏絡魚類。此被纏絡的魚類又不能為人類所利用，因此將造成資源極大的浪費。
+三.漁獲物的品質問題                            
+刺網之漁獲勿因曾罹刺網目,魚體多少有所損傷，因而價格通常較魚體無損傷者低。尤其漁獲過多時，常有魚賤傷漁，致血本無歸之情形。此時業者應適時地減少作業，以調節供需。
+四.三重刺網對資源破壞的問題                            
+單重刺網能讓小魚通過，對資源的影響尚小。然而三重刺網之內網，因其網目甚小，對於資源，不論大小均能將之漁獲。雖然三重刺網的漁獲效率甚高，但若漫無限制的使用，對資源將有莫大的破壞力，因此政府主管機關，應適當地限制三重剌網的使用。
+五.過漁的問題                   
+本省沿岸近海漁業資源，由於過量的漁獲，魚體體型愈來愈小，現已有減少的現象。業者為增加漁獲，因而縮小網目，如此惡性循環，漁業資源之減少將來將不將堪設想。
+
+[Type:簡答題]
+海巡勤務執行及狀況處置
+一、海上喋血案件之發生，並非偶然，其「前置因素」有那些?
+答:
+前置因素如下:
+(一)生物因素
+(二)心理因素 
+(三)理性選擇
+(四)社會、文化、經濟因素
+
+[Type:簡答題]
+二、海上喋血案件之發生，並非偶然，其「誘發因素」有那些?
+答:
+誘發因素如下:
+(一)酒精濫用 
+(二)晃動不適 
+(三)犯案工具便利性
+(四)生活空間因素
+
+[Type:簡答題]
+三、各巡防勤務單位對執勤人員之編組、服勤方式之互換及服勤時間之分配，應妥予規劃，輪流實施，並注意那些事項?
+答:
+(一)勤務時間必須循環銜接，不留空隙。
+(二)勤務方式應視需要互換，使每人普遍輪流服勤。
+(三)分派勤務，力求勞逸平均，藉以調節精神及體力。
+(四)應酌留相當備勤人員，協助突發事件之處理及機動支援。
+(五)每人須有接受在職及專業訓練之時間。
+    前項勤務編配，採行三班替換或其他適合實際需要之分班服勤。
+
+[Type:簡答題]
+四、大陸漁船扺抗我海巡艦艇登檢的手法有那些?
+答:
+(一)蛇行竄逃:以迂迴蛇行造浪等方式，拒絕登檢。
+(二)抗拒登檢:將鐵條利器置於船側，阻擋登檢。
+(三)阻礙登檢:身體攀附於船邊，阻擋登檢。
+(四)直接攻擊:用石塊、利器丟擲巡防艦艇。
+(五)塗銷船名:將船名塗銷或遮掩，以避免我方蒐證將船舶資料送陸方再度裁罰。
+(六)其他。
+
+[Type:簡答題]
+五、為保護漁民在台菲海域之作業安全，應有那些作為? 請簡述之。
+答:
+(一)漁船穿越預警
+(二)風險海域勸導
+(三)列管漁船查察
+(四)強化通報監控
+(五)主動攔檢查察
+
+[Type:簡答題]
+六、有關巡防勤務在執行前，應實施勤前教育，其可區分為那三類?
+答:
+依「海岸巡防機關勤務實施要點」之規定，可分下列三類:
+(一)基層勤前教育：以巡防艦、船、艇、安檢所及巡邏站實施。
+(二)聯合勤前教育：以海巡隊及岸巡隊為實施單位。 
+(三)專案勤前教育：於執行專案或臨時特定勤務前實施。
+
+[Type:申論題]
+一、試論為保護漁民在台日海域之作業安全，應有那些作為?
+答: 
+(一)持續參與協議:持續派員參與「臺日漁業會談」，持續為「協議適用海域」執法與作業安定，貢獻心力。
+(二)共同約制管理:在協議適用海域，加強約制管理，查察雙方漁船作業情形，保障我國漁船捕魚權利。
+(三)彈性部署反應:掌握漁船作業海域，彈性調整艦艇勤務部署，遇有干擾或扣押案件，能立即彈性反應。
+(四)建立熱區:拜會相關漁會，聽取漁民建議，建立護漁熱區。
+(五)具體規劃:針對重點海域部署艦艇，加強保護漁民作業安全。
+(六)掌握日船動態:嚴密蒐證及記錄在協議適用海域活動之日本公務機、艦、船及漁船動態。
+(七)橫向能量整合:持續依據海域狀況，協調海軍聯合護漁，擴大護漁成效，提供漁民更迅速與安全之服務。
+(八)加強護漁宣導:海巡幹部拜會漁會，交流魚汛作業資訊，聽取漁民需求及加強護漁宣導。
+
+[Type:申論題]
+二、在海象惡劣下，大陸漁船為何仍可越界到我海域捕魚?而我海巡艦艇受限於那些因素，在惡劣海象下，不易執行任務?
+答:
+(一)因為大陸漁船具有下列特性，較能在惡劣海象下滯留作業:
+1.傘錨效應減少橫搖：陸船具拖網傘錨效應，遇海象不佳時，橫搖少、船體穩，方便作業。
+2.鋼鐵船體耐風耐浪：陸船多為鋼鐵材質，常達百噸以上，結構強，不畏風浪。
+(二)海巡艦艇因下列限制，不易在惡劣海象下執行任務:
+1.V型船底設計：巡防艦艇為降低水阻，提高船速，均採V型底，海象不佳時，船體易彈跳，操控不易。
+2.FRP船體材質：巡防艦艇為FRP或鋼鋁合金，船身輕，易受風浪影響，橫搖與起伏較大。
+
+[Type:簡答題]
+刑事鑑識基礎
+請問物證功用為何？
+Ans:
+1. 證明犯罪事實(打破窗戶)、顯示犯罪模式(鑽牆大盜)、建立關聯性：連結人與人、人與物或人與現場、反駁或支持證人之證詞、鑑定嫌犯、提供偵查線索、鑑定不明物質、重建犯罪行為。
+
+[Type:簡答題]
+請問犯罪現場搜索有哪幾種？
+Ans:
+1. 搜索型態有連結法、直線法(帶狀法)方格法、區塊法、放射法、螺旋法。
+
+[Type:簡答題]
+請問來自犯罪現場的物證型態可分為哪5種？
+Ans:
+1. 短暫性證物、狀態性證物、型態性證物、移轉性證物、關聯性證物
+
+[Type:簡答題]
+甚麼是”路卡交換理論”?
+Ans:
+1. 其理論在於「凡兩個物體接觸，必會產生轉移現象」，其用於犯罪現場調查中，行為人（犯罪嫌疑者）必然會帶走一些東西，亦會留下一些東西。即現場必會留下微量跡證。
+
+[Type:簡答題]
+犯罪現場有三層不同管制區，請問是哪三層管制區，其目的為何?
+Ans:
+(一)第一層：(對一般民眾的現場管制)
+涵蓋整個管制區，管制車輛與非相關人員進出。
+可以規劃設立特別區域供媒體使用。
+(二)第二層：(對無關現場勘察的公務管制)
+緊鄰犯罪現場，指允許警察、救護人員、工作人員及公務車輛進入。
+設立指揮所，可以向偵查人員簡報或供人員補給休息。
+(三)第三層：(管制目標區域)
+最嚴格的管制，唯有現場勘察人員可以進入。
+
+[Type:申論題]
+課程撥放「麥森警殺妻案」影片中，在被害者屍體已被火化銷燬情況下，李昌鈺博士如何利用連結理論及路卡交換理論找尋犯罪現場物證？
+Ans:
+1. 駕駛座上遮陽板有沾血頭髮多次摔撞的痕跡(移轉理論)。
+2. 駕駛座之車門有六角螺帽，沾有血跡毛髮，與被海者右臉上的深痕型態相符。
+3. 在儀表上有數以百計的中速度血跡噴濺痕，經採證及痕跡表示為多次撞擊噴濺所致。
+4. 在貨廂拉門上有一個拳頭血印與數枚血指印，顯示沿壁倒下。
+5. 貨廂區域有泥土混雜著血液，分析發現先有泥土再有血液。
+
+[Type:簡答題]
+犯罪偵查實務案例研討
+附帶搜索之範圍?
+答：
+1. 被告或犯罪嫌疑人之身體、隨身攜帶之物件、所使用之交通工具、四肢可立即可觸及之處所
+
+[Type:簡答題]
+請問附帶搜索的前提要件為何？
+答：
+1. 附帶搜索的前提要件為合法的逮捕、拘提、羈押。
+
+[Type:簡答題]
+依據漁港安全檢查規定，安檢人員於執行無令狀之行政檢查之時機為何？
+答：
+1. 結合船舶評鑑會議類別、近期情資及相關情資等，據以認定有無違法之虞。
+
+[Type:簡答題]
+請簡述馬賽克理論？
+答：
+1. 長期以定位追蹤器鎖定個人，追蹤公開活動長達一段期間，將其片段零碎的個人活動合併觀察，即可能拼湊出其個人生活之大致圖像。因此警察以此種偵查手段取得證據，將侵害特定個人的合理隱私期待。
+
+[Type:簡答題]
+安檢人員實施安檢時，若遭船長惡意強行載運出港，可能違反那幾項法規？
+答：
+1. 刑法135條妨礙公務、刑法302條妨害自由、海岸巡防法第6條第3項規避、妨礙、拒絕檢查。
+
+[Type:簡答題]
+請簡述何謂毒樹果實理論？
+答：
+1. 先前違法取得的證據，有如「毒樹」，而本於此再行取得的證據，則有如「毒果」，故對於該衍生性取得的證據，原則上應排除其證據能力。
+
+[Type:申論題]
+犯罪偵查實務上所謂之「釣魚」，可區分為哪二種，並請就其實質內容提出解釋。
+答：
+1、「誘捕偵查」：指對於原「以犯罪或具有犯罪故意」之人，以引誘之方式，使其暴露犯罪事證，再加以逮捕或偵辦者。原則上查獲之事證具有證據能力。
+2、「陷害教唆」：指行為人原「不具」犯罪之故意，純因司法警察之設計教唆。始萌生犯意。原則上查獲之事證認為不具證據能力。
+
+[Type:簡答題]
+安全情報撰寫
+本署情蒐指導單位、情蒐執行單位各為何？
+答：
+(一)	本署情蒐指導單位：海巡署情報組。
+(二)	情蒐執行單位：查緝隊、海巡隊及岸巡隊。
+
+[Type:簡答題]
+安全情報之專報撰寫要件為何？（請列出3項）
+答：
+(一)	針對特定議題深入分析。
+(二)	以第三者之立場撰寫。
+(三)	內容須為實用性而非文學性。
+(四)	第一段應即破題說明主旨。
+(五)	適切分段撰寫，標點分明。
+(六)	要有評析與推論（研析建議）。
+(七)	善用表格或數字，必要時可當附件。
+
+[Type:簡答題]
+請說明優質安全情報特性(共四項)?
+答：
+1. 符合需求、內容完整、具可信度、追本溯源。
+
+[Type:簡答題]
+請說明六何要件?
+答：
+1. 何人、何事、何時、何地、何物、如何或為何。
+
+[Type:簡答題]
+請例舉4項安全情報未採用之常見情形?
+答：
+1. 未能提供具體情資重點、六何要件不全、未掌握時效、情資內容大量引用網路、抄襲他人情資內容情資內容錯誤、虛構情資、未依情蒐要項蒐報。
+
+[Type:申論題]
+怎樣撰寫一則好的海巡安全情報?
+答：
+海巡安全情報，應依據下達情蒐指導要項結合整體安全情勢變化，掌握危安目標情勢變化發展，積極注蒐可能影響國家安全及利益相關危安情資；並注意陳報時效性確依「六何」(人、事、時、地、物、如何及為何)要件及初、續、結報要領，儘速彙編要況報告，及時通報反映供參，發揮情報支援決策功效。
+`;
+
+let questionBank = [];
+let usedIndices = new Set();
+let currentIndex = -1;
+let currentQ = null;
+let wakeLock = null; 
+let currentMode = 'all'; // 'all', 'law', 'professional'
+
+// 初始化：解析題庫
+window.onload = function() {
+    parseQuestionBank(rawDataLaw, 'law');
+    parseQuestionBank(rawDataProf, 'professional');
+    updateStats();
+    
+    // 初始化 Wake Lock 開關狀態 (預設關閉)
+    const switchEl = document.getElementById('wakeLockSwitch');
+    if (switchEl) switchEl.checked = false;
+    
+    // 按鈕狀態更新
+    const importBtn = document.getElementById('btnImport');
+    if(importBtn) {
+        importBtn.className = "btn btn-outline-success btn-sm";
+        importBtn.innerHTML = "✅ 題庫已載入";
+        importBtn.disabled = true;
+    }
+    
+    document.getElementById('statsArea').style.display = 'block';
+};
+
+// 解析函數 (新增分類參數)
+function parseQuestionBank(rawString, category) {
+    const questions = rawString.split('[Type:');
+    
+    questions.forEach(block => {
+        if (!block.trim()) return;
+        
+        let typeEnd = block.indexOf(']');
+        let type = block.substring(0, typeEnd);
+        let content = block.substring(typeEnd + 1).trim();
+        
+        // 分割題目與答案
+        let parts = content.split(/答[:：]|Ans[:：]/i); // 兼容 "答：" 和 "Ans:"
+        if (parts.length >= 2) {
+            let qText = parts[0].trim();
+            let aText = parts.slice(1).join('答：').trim();
+            
+            questionBank.push({
+                type: type,
+                q: qText,
+                a: aText,
+                category: category,
+                diagram: null
+            });
+        }
+    });
+}
+
+function updateStats() {
+    const countLaw = questionBank.filter(q => q.category === 'law').length;
+    const countProf = questionBank.filter(q => q.category === 'professional').length;
+    
+    document.getElementById('countLaw').innerText = countLaw;
+    document.getElementById('countProf').innerText = countProf;
+    document.getElementById('countTotal').innerText = questionBank.length;
+}
+
+// 點選「開始測驗」-> 顯示模式選擇
+document.getElementById('btnStart').addEventListener('click', () => {
+    if (questionBank.length === 0) {
+        alert("題庫為空，請檢查解析！");
+        return;
+    }
+    
+    // 顯示模式選擇區，隱藏按鈕區
+    document.getElementById('btnStart').disabled = true; // 暫時禁用
+    document.getElementById('modeSelectionArea').style.display = 'block';
+    document.getElementById('statsArea').style.display = 'none'; // 隱藏統計
+    
+    // 滾動到選擇區
+    document.getElementById('modeSelectionArea').scrollIntoView({ behavior: 'smooth' });
+});
+
+// 取消模式選擇
+window.cancelModeSelection = function() {
+    document.getElementById('modeSelectionArea').style.display = 'none';
+    document.getElementById('statsArea').style.display = 'block'; // 顯示回統計
+    document.getElementById('btnStart').disabled = false;
+};
+
+// 開始指定模式的測驗
+window.startQuizMode = function(mode) {
+    currentMode = mode;
+    document.getElementById('modeSelectionArea').style.display = 'none';
+    document.getElementById('statsArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'block';
+    
+    // 開始出題
+    nextQuestion();
+};
+
+// 隨機出題 (支援模式過濾)
+function nextQuestion() {
+    // 1. 根據模式篩選可用題目索引
+    let availableIndices = [];
+    questionBank.forEach((q, index) => {
+        if (currentMode === 'all' || q.category === currentMode) {
+            availableIndices.push(index);
+        }
+    });
+
+    // 2. 過濾掉已出過的題目
+    let validIndices = availableIndices.filter(idx => !usedIndices.has(idx));
+
+    if (validIndices.length === 0) {
+        if (availableIndices.length === 0) {
+             alert("該類別沒有題目！");
+             // 重置狀態
+             document.getElementById('quizArea').style.display = 'none';
+             document.getElementById('statsArea').style.display = 'block';
+             document.getElementById('btnStart').disabled = false;
+             return;
+        }
+        alert("恭喜！您已完成本模式的所有題目！");
+        return;
+    }
+
+    // 3. 隨機選題
+    let rand = Math.floor(Math.random() * validIndices.length);
+    let idx = validIndices[rand];
+
+    usedIndices.add(idx);
+    currentIndex = idx;
+    currentQ = questionBank[idx];
+
+    // UI 更新
+    let categoryName = currentQ.category === 'law' ? '法律' : '專業';
+    document.getElementById('qTypeBadge').innerText = `${categoryName} | ${currentQ.type}`;
+    
+    // 計算該模式下的進度
+    let doneCount = 0;
+    availableIndices.forEach(i => { if(usedIndices.has(i)) doneCount++; });
+    
+    document.getElementById('qProgress').innerText = `進度: ${doneCount} / ${availableIndices.length}`;
+    document.getElementById('questionText').innerText = currentQ.q;
+    document.getElementById('userAnswer').value = '';
+    document.getElementById('userAnswer').disabled = false;
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('btnSubmit').style.display = 'block';
+    
+    // 不自動滾動，避免 Header 遮擋
+    // window.scrollTo({ top: 0, behavior: 'smooth' }); 
+}
+
+document.getElementById('btnNext').addEventListener('click', nextQuestion);
+
+// 全部重設
+document.getElementById('btnReset').addEventListener('click', () => {
+    if(confirm('確定要全部重設嗎？這將清除作答紀錄並回到初始畫面。')) {
+        usedIndices.clear();
+        currentIndex = -1;
+        currentQ = null;
+        currentMode = 'all';
+        
+        // 重置介面
+        document.getElementById('userAnswer').value = '';
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('quizArea').style.display = 'none';
+        document.getElementById('reviewArea').style.display = 'none';
+        document.getElementById('modeSelectionArea').style.display = 'none';
+        
+        document.getElementById('statsArea').style.display = 'block';
+        document.getElementById('btnStart').disabled = false;
+        
+        alert('已重設所有紀錄！請重新點選「🚀 隨機測驗模式」。');
+    }
+});
+
+// 檢視完整題庫功能 (支援過濾)
+let currentReviewFilter = 'all';
+
+document.getElementById('btnReview').addEventListener('click', () => {
+    document.getElementById('statsArea').style.display = 'none';
+    document.getElementById('quizArea').style.display = 'none';
+    // 不再隱藏 controlPanel，因為它現在在 sticky header 中
+    // document.getElementById('controlPanel').style.display = 'none'; 
+    document.getElementById('reviewArea').style.display = 'block';
+    
+    renderReviewList();
+});
+
+window.filterReview = function(category) {
+    currentReviewFilter = category;
+    renderReviewList();
+};
+
+function renderReviewList() {
+    const reviewContent = document.getElementById('reviewContent');
+    reviewContent.innerHTML = ''; 
+
+    let filteredList = questionBank.map((q, i) => ({...q, originalIndex: i}))
+                                   .filter(q => currentReviewFilter === 'all' || q.category === currentReviewFilter);
+
+    if (filteredList.length === 0) {
+        reviewContent.innerHTML = '<p class="text-center text-muted">目前沒有題目資料。</p>';
+        return;
+    }
+
+    filteredList.forEach((q) => {
+        const index = q.originalIndex;
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'card mb-3 shadow-sm review-item';
+        
+        // 類別標籤顏色
+        let catBadgeClass = q.category === 'law' ? 'bg-success' : 'bg-warning text-dark';
+        let catName = q.category === 'law' ? '法律' : '專業';
+
+        itemDiv.innerHTML = `
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <h5 class="review-q">
+                        <span class="badge ${catBadgeClass} me-1">${catName}</span>
+                        <span class="badge bg-primary me-2">Q${index + 1}</span> 
+                        [${q.type}]
+                    </h5>
+                    <button class="btn btn-sm btn-outline-primary btn-toggle-ans" onclick="toggleAnswer(${index})">
+                        👁️ 顯示/隱藏答案
+                    </button>
+                </div>
+                <p class="card-text fw-bold" style="white-space: pre-wrap;">${q.q}</p>
+                
+                <div id="ans-container-${index}" class="review-a-container" style="display:none;">
+                    <div class="badge bg-secondary mb-2">標準答案</div>
+                    <div class="review-a-text" id="std-ans-${index}">${q.a}</div>
+                </div>
+
+                <div id="practice-container-${index}" class="review-practice-area">
+                    <label class="form-label text-muted small">✍️ 自我練習區：</label>
+                    <textarea class="form-control mb-2" id="practice-input-${index}" rows="4" placeholder="在此輸入您的答案..."></textarea>
+                    <button class="btn btn-success btn-sm w-100" onclick="checkPractice(${index})">✅ 送出比對</button>
+                    <div id="practice-result-${index}" class="diff-result-mini" style="display:none;"></div>
+                </div>
+            </div>
+        `;
+        reviewContent.appendChild(itemDiv);
+    });
+}
+
+// 螢幕常亮功能 (Wake Lock API)
+// 只需要一個開關監聽器，因為只有一個開關在 sticky header
+async function toggleWakeLock(checked) {
+    const statusText = document.getElementById('wakeLockStatus');
+
+    if (checked) {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+                if(statusText) {
+                    statusText.innerText = "(已開啟)";
+                    statusText.classList.add("text-success");
+                    statusText.classList.add("wakelock-active");
+                }
+                
+                wakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock released:', wakeLock.released);
+                    if(wakeLock.released) {
+                         const switchEl = document.getElementById('wakeLockSwitch');
+                         if(switchEl) switchEl.checked = false;
+                         if(statusText) {
+                            statusText.innerText = "(已關閉)";
+                            statusText.classList.remove("text-success");
+                            statusText.classList.remove("wakelock-active");
+                        }
+                    }
+                });
+            } else {
+                alert("您的瀏覽器不支援螢幕常亮功能 (Wake Lock API)。");
+                const switchEl = document.getElementById('wakeLockSwitch');
+                if(switchEl) switchEl.checked = false;
+            }
+        } catch (err) {
+            console.error(`${err.name}, ${err.message}`);
+            if(statusText) statusText.innerText = "(啟動失敗)";
+            const switchEl = document.getElementById('wakeLockSwitch');
+            if(switchEl) switchEl.checked = false;
+        }
+    } else {
+        if (wakeLock !== null) {
+            await wakeLock.release();
+            wakeLock = null;
+            if(statusText) {
+                statusText.innerText = "(已關閉)";
+                statusText.classList.remove("text-success");
+                statusText.classList.remove("wakelock-active");
+            }
+        }
+    }
+}
+
+document.getElementById('wakeLockSwitch').addEventListener('change', function() { toggleWakeLock(this.checked); });
+
+document.addEventListener('visibilitychange', async () => {
+    if (wakeLock !== null && document.visibilityState === 'visible') {
+        toggleWakeLock(true); // 重新申請
+    }
+});
+
+// 切換單題答案顯示/隱藏
+window.toggleAnswer = function(index) {
+    const ansContainer = document.getElementById(`ans-container-${index}`);
+    
+    if (ansContainer.style.display === 'none') {
+        ansContainer.style.display = 'block';
+    } else {
+        ansContainer.style.display = 'none';
+    }
+};
+
+// 練習模式比對功能
+window.checkPractice = function(index) {
+    const userAns = document.getElementById(`practice-input-${index}`).value;
+    const stdAns = questionBank[index].a;
+    const resultDiv = document.getElementById(`practice-result-${index}`);
+    
+    if (!userAns.trim()) {
+        alert("請先輸入答案！");
+        return;
+    }
+
+    const diffHtml = computeDiff(stdAns, userAns);
+    resultDiv.innerHTML = `<strong>比對結果：</strong><br>${diffHtml}`;
+    resultDiv.style.display = 'block';
+};
+
+// 全部顯示/隱藏切換
+let isAllVisible = false;
+document.getElementById('btnToggleAll').addEventListener('click', () => {
+    isAllVisible = !isAllVisible;
+    const currentItems = document.querySelectorAll('.review-item');
+    currentItems.forEach(item => {
+        const index = item.getAttribute('data-id');
+        const ansContainer = document.getElementById(`ans-container-${index}`);
+        if(isAllVisible) {
+            ansContainer.style.display = 'block';
+        } else {
+            ansContainer.style.display = 'none';
+        }
+    });
+});
+
+// 從檢視模式返回
+document.getElementById('btnBackFromReview').addEventListener('click', () => {
+    document.getElementById('reviewArea').style.display = 'none';
+    
+    if (usedIndices.size > 0 && currentQ) {
+        document.getElementById('quizArea').style.display = 'block';
+    } else {
+        document.getElementById('statsArea').style.display = 'block';
+    }
+});
+
+// 比對邏輯 (主測驗區)
+document.getElementById('btnSubmit').addEventListener('click', () => {
+    let userAns = document.getElementById('userAnswer').value;
+    let stdAns = currentQ.a;
+
+    if (!userAns.trim()) {
+        if(!confirm("您尚未作答，確定要送出嗎？")) return;
+    }
+
+    document.getElementById('resStandard').innerText = stdAns;
+    document.getElementById('resUser').innerText = userAns;
+
+    let diffHtml = computeDiff(stdAns, userAns);
+    document.getElementById('resDiff').innerHTML = diffHtml;
+
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('userAnswer').disabled = true;
+    document.getElementById('btnSubmit').style.display = 'none';
+    
+    // 滾動到結果區，但要扣除 sticky header 的高度
+    const headerHeight = document.getElementById('stickyHeader').offsetHeight;
+    const element = document.getElementById('resultArea');
+    const elementPosition = element.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerHeight - 20;
+
+    window.scrollTo({
+         top: offsetPosition,
+         behavior: "smooth"
+    });
+});
+
+function isPunctuationOnly(str) {
+    return /^([，。、；：？！「」『』().,;?!:"'\s\n\r]+)$/.test(str);
+}
+
+function computeDiff(std, user) {
+    if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
+
+    let dmp = new diff_match_patch();
+    let diffs = dmp.diff_main(std, user);
+    dmp.diff_cleanupSemantic(diffs);
+
+    let html = '';
+    diffs.forEach(part => {
+        let type = part[0];
+        let text = part[1];
+
+        if (type === 0) {
+            html += `<span>${text}</span>`;
+        } else {
+            if (isPunctuationOnly(text)) {
+                 html += `<span>${text}</span>`;
+            } else {
+                if (type === 1) { 
+                    html += `<span class="diff-ins">${text}</span>`;
+                } else if (type === -1) { 
+                    html += `<span class="diff-missing">${text}</span>`;
+                }
+            }
+        }
+    });
+
+    return html;
+}
+</script>
+
+</body>
+</html>
