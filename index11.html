@@ -218,7 +218,7 @@
                                 <label class="form-check-label small fw-bold text-muted" for="unorderedMatch" style="cursor:pointer;">不限順序比對</label>
                             </div>
                         </div>
-                        <div class="form-text mb-2">請注意：答案中的項次編號（如 1.、2.、(1)、一、二）均列入比對範圍，請務必輸入。</div>
+                        <div class="form-text mb-2">請注意：系統在比對時會自動忽略項次編號（如 1.、(一)、一、），不需刻意背誦編號格式。</div>
                         <textarea class="form-control fs-5" id="userAnswer" rows="8" placeholder="請在此輸入答案..."></textarea>
                     </div>
 
@@ -253,7 +253,7 @@
                             </div>
                             <div class="card-footer bg-white border-top-0 p-3">
                                 <div class="alert alert-secondary py-2 small mb-0">
-                                    <i class="bi bi-info-circle"></i> 說明：<span class="diff-ins">紅色刪除線</span> 代表多餘或錯誤的內容；<span class="diff-missing">藍色底色文字</span> 代表您漏掉的標準答案內容（含編號）。黑色的標點符號代表系統已忽略其差異。
+                                    <i class="bi bi-info-circle"></i> 說明：<span class="diff-ins">紅色刪除線</span> 代表多餘或錯誤的內容；<span class="diff-missing">藍色底色文字</span> 代表您漏掉的標準答案內容。系統已自動忽略項次編號與標點符號的差異。
                                 </div>
                                 <!-- Next Button -->
                                 <div class="d-grid mt-3">
@@ -514,15 +514,8 @@ const rawDataProf = `
 犯罪偵查實務上所謂之「釣魚」,可區分為哪二種,並請就其實質內容提出解釋。
 提示詞:臺灣臺中地方法院114年度訴字第772 號刑事判決:證據能力
 答:
-一、偵查(釣魚)手段定義：
-1、誘捕偵查：指對於原「已犯罪或具有犯罪故意」之人，以引誘之方式，使其暴露犯罪事證，再加以逮捕或偵辦者。原則上查獲之事證具有證據能力
-2、陷害教唆：指行為人原「不具」犯罪之故意，純因司法警察之設計教唆，始萌生犯意。原則上查獲之事證認為不具證據能力
-二、證據能力：
-本案所查獲之事證具有證據能力，理由如下：
-犯嫌於社群媒體公開販售二級毒品訊息給不特定人仕，具有主觀犯意，後續為司法警察佯裝買家引誘犯嫌與其交易，再加以逮捕，符合誘捕偵查的偵查手段定義，故查獲之事證具證據能力
-三、論罪科刑：
-1、公開販售二級毒品已違反毒品危害防制條例第4條第2款，後續與佯裝成買家之司法警察約定交易並遭逮捕，雖交易未完成，仍違反同條第6款未遂犯罰之
-2、刑法第25條第2項，未遂犯，以有特別規定為限者，並得按既遂犯之刑減輕之
+1、「誘捕偵查」:指對於原「以犯罪或具有犯罪故意」之人,以引誘之方式,使其暴露犯罪事證,再加以逮捕或偵辦者。原則上查獲之事證具有證據能力。
+2、「陷害教唆」:指行為人原「不具」犯罪之故意,純因司法警察之設計教唆。始萌生犯意。原則上查獲之事證認為不具證據能力。
 
 [Type:簡答題]
 一、請問物證功用為何?
@@ -1050,15 +1043,30 @@ document.getElementById('btnSubmit').addEventListener('click', () => {
     });
 });
 
+function removeListMarkers(text) {
+    let pattern = /^\s*(?:\d+[、.]|\([\d一二三四五六七八九十]+\)|（[\d一二三四五六七八九十]+）|[一二三四五六七八九十]+[、.]|[A-Z][、.]|•|-)\s*/gm;
+    return text.replace(pattern, '');
+}
+
 function isPunctuationOnly(str) {
     return /^([，。、；：？！「」『』().,;?!:"'\s\n\r]+)$/.test(str);
+}
+
+function normalizeParentheses(text) {
+    return text.replace(/（/g, '(').replace(/）/g, ')');
 }
 
 function computeDiff(std, user) {
     if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
 
+    std = normalizeParentheses(std);
+    user = normalizeParentheses(user);
+
+    let cleanStd = removeListMarkers(std);
+    let cleanUser = removeListMarkers(user);
+
     let dmp = new diff_match_patch();
-    let diffs = dmp.diff_main(std, user);
+    let diffs = dmp.diff_main(cleanStd, cleanUser);
     dmp.diff_cleanupSemantic(diffs);
 
     let html = '';
@@ -1089,12 +1097,12 @@ function splitIntoItems(text) {
     let items = [];
     let currentItem = "";
     // 自動識別各種類型的項次編號 (如: 1. , 1、 , (一) , （一） , 一、 等等)
-    let pattern = /^\s*(\d+[、.]|\([\d一二三四五六七八九十]+\)|（[\d一二三四五六七八九十]+）|[一二三四五六七八九十]+[、.]|[A-Z][、.]|•)/;
+    let pattern = /^\s*(?:\d+[、.]|\([\d一二三四五六七八九十]+\)|（[\d一二三四五六七八九十]+）|[一二三四五六七八九十]+[、.]|[A-Z][、.]|•|-)\s*/;
     
     for(let line of lines) {
         if (pattern.test(line)) {
             if (currentItem.trim() !== "") items.push(currentItem.trim());
-            currentItem = line;
+            currentItem = line.replace(pattern, ''); // 剃除編號
         } else {
             if (currentItem !== "") currentItem += "\n" + line;
             else currentItem = line;
@@ -1104,13 +1112,16 @@ function splitIntoItems(text) {
     
     // 如果找不到明顯的編號，改為依據換行拆分，作為退路
     if (items.length <= 1) {
-        return lines.filter(s => s.trim().length > 0);
+        return lines.map(s => s.replace(pattern, '').trim()).filter(s => s.length > 0);
     }
     return items;
 }
 
 function computeUnorderedDiff(std, user) {
     if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
+
+    std = normalizeParentheses(std);
+    user = normalizeParentheses(user);
 
     let stdItems = splitIntoItems(std);
     let userItems = splitIntoItems(user);
