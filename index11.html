@@ -211,14 +211,8 @@
                     
                     <!-- Answer Input -->
                     <div class="mb-3 mt-4">
-                        <div class="d-flex justify-content-between align-items-end mb-2">
-                            <label for="userAnswer" class="form-label fw-bold text-primary m-0">✍️ 您的答案：</label>
-                            <div class="form-check form-switch m-0">
-                                <input class="form-check-input" type="checkbox" id="unorderedMatch" checked>
-                                <label class="form-check-label small fw-bold text-muted" for="unorderedMatch" style="cursor:pointer;">不限順序比對</label>
-                            </div>
-                        </div>
-                        <div class="form-text mb-2">請注意：系統在比對時會自動忽略項次編號（如 1.、(一)、一、），不需刻意背誦編號格式。</div>
+                        <label for="userAnswer" class="form-label fw-bold text-primary">✍️ 您的答案：</label>
+                        <div class="form-text mb-2 text-success">💡 <strong>智慧比對啟用中</strong>：系統會自動辨識並忽略項次編號（如 1.、一、(一) 等）的格式差異，且<strong>不限作答順序</strong>，請安心作答。</div>
                         <textarea class="form-control fs-5" id="userAnswer" rows="8" placeholder="請在此輸入答案..."></textarea>
                     </div>
 
@@ -253,7 +247,7 @@
                             </div>
                             <div class="card-footer bg-white border-top-0 p-3">
                                 <div class="alert alert-secondary py-2 small mb-0">
-                                    <i class="bi bi-info-circle"></i> 說明：<span class="diff-ins">紅色刪除線</span> 代表多餘或錯誤的內容；<span class="diff-missing">藍色底色文字</span> 代表您漏掉的標準答案內容。系統已自動忽略項次編號與標點符號的差異。
+                                    <i class="bi bi-info-circle"></i> 說明：<span class="diff-ins">紅色刪除線</span> 為多餘或錯誤；<span class="diff-missing">藍底文字</span> 為漏掉的內容。系統已自動忽略項次編號與順序的差異，保留您原有的編號。
                                 </div>
                                 <!-- Next Button -->
                                 <div class="d-grid mt-3">
@@ -871,13 +865,7 @@ function renderReviewList() {
                 </div>
 
                 <div id="practice-container-${index}" class="review-practice-area">
-                    <div class="d-flex justify-content-between align-items-end mb-2">
-                        <label class="form-label text-muted small m-0">✍️ 自我練習區：</label>
-                        <div class="form-check form-switch m-0">
-                            <input class="form-check-input" type="checkbox" id="practice-unordered-${index}" checked>
-                            <label class="form-check-label small text-muted" for="practice-unordered-${index}" style="cursor:pointer; font-size: 0.8rem;">不限順序</label>
-                        </div>
-                    </div>
+                    <label class="form-label text-muted small">✍️ 自我練習區：</label>
                     <textarea class="form-control mb-2" id="practice-input-${index}" rows="4" placeholder="在此輸入您的答案..."></textarea>
                     <button class="btn btn-success btn-sm w-100" onclick="checkPractice(${index})">✅ 送出比對</button>
                     <div id="practice-result-${index}" class="diff-result-mini" style="display:none;"></div>
@@ -963,14 +951,13 @@ window.checkPractice = function(index) {
     const userAns = document.getElementById(`practice-input-${index}`).value;
     const stdAns = questionBank[index].a;
     const resultDiv = document.getElementById(`practice-result-${index}`);
-    const isUnordered = document.getElementById(`practice-unordered-${index}`).checked;
     
     if (!userAns.trim()) {
         alert("請先輸入答案！");
         return;
     }
 
-    const diffHtml = isUnordered ? computeUnorderedDiff(stdAns, userAns) : computeDiff(stdAns, userAns);
+    const diffHtml = computeDiff(stdAns, userAns);
     resultDiv.innerHTML = `<strong>比對結果：</strong><br>${diffHtml}`;
     resultDiv.style.display = 'block';
 };
@@ -1023,8 +1010,7 @@ document.getElementById('btnSubmit').addEventListener('click', () => {
     document.getElementById('resStandard').innerText = stdAns;
     document.getElementById('resUser').innerText = userAns;
 
-    let isUnordered = document.getElementById('unorderedMatch').checked;
-    let diffHtml = isUnordered ? computeUnorderedDiff(stdAns, userAns) : computeDiff(stdAns, userAns);
+    let diffHtml = computeDiff(stdAns, userAns);
     document.getElementById('resDiff').innerHTML = diffHtml;
 
     document.getElementById('resultArea').style.display = 'block';
@@ -1043,153 +1029,122 @@ document.getElementById('btnSubmit').addEventListener('click', () => {
     });
 });
 
-function removeListMarkers(text) {
-    let pattern = /^\s*(?:\d+[、.]|\([\d一二三四五六七八九十]+\)|（[\d一二三四五六七八九十]+）|[一二三四五六七八九十]+[、.]|[A-Z][、.]|•|-)\s*/gm;
-    return text.replace(pattern, '');
-}
-
 function isPunctuationOnly(str) {
     return /^([，。、；：？！「」『』().,;?!:"'\s\n\r]+)$/.test(str);
 }
 
-function normalizeParentheses(text) {
-    return text.replace(/（/g, '(').replace(/）/g, ')');
+function parseListItems(text) {
+    text = text.replace(/（/g, '(').replace(/）/g, ')');
+    let lines = text.split('\n');
+    let items = [];
+    let currentMarker = "";
+    let currentContent = [];
+
+    let markerRegex = /^\s*((?:[\(][\d一二三四五六七八九十]+[\)][、.]?|[\d一二三四五六七八九十]+[、.]|[a-zA-Z][、.]|[•\-])\s*)/;
+
+    for (let line of lines) {
+        let match = line.match(markerRegex);
+        if (match) {
+            if (currentContent.length > 0 || currentMarker !== "") {
+                items.push({ marker: currentMarker, content: currentContent.join('\n') });
+            }
+            currentMarker = match[1];
+            currentContent = [line.substring(match[1].length)];
+        } else {
+            currentContent.push(line);
+        }
+    }
+    if (currentContent.length > 0 || currentMarker !== "") {
+        items.push({ marker: currentMarker, content: currentContent.join('\n') });
+    }
+    return items;
+}
+
+function getSimilarity(dmp, t1, t2) {
+    if (!t1.trim() && !t2.trim()) return 1;
+    let diffs = dmp.diff_main(t1, t2);
+    dmp.diff_cleanupSemantic(diffs);
+    let matchLen = 0;
+    diffs.forEach(p => { if (p[0] === 0) matchLen += p[1].length; });
+    return matchLen / Math.max(t1.length, t2.length);
 }
 
 function computeDiff(std, user) {
     if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
 
-    std = normalizeParentheses(std);
-    user = normalizeParentheses(user);
-
-    let cleanStd = removeListMarkers(std);
-    let cleanUser = removeListMarkers(user);
-
-    let dmp = new diff_match_patch();
-    let diffs = dmp.diff_main(cleanStd, cleanUser);
-    dmp.diff_cleanupSemantic(diffs);
-
-    let html = '';
-    diffs.forEach(part => {
-        let type = part[0];
-        let text = part[1];
-
-        if (type === 0) {
-            html += `<span>${text}</span>`;
-        } else {
-            if (isPunctuationOnly(text)) {
-                 html += `<span>${text}</span>`;
-            } else {
-                if (type === 1) { 
-                    html += `<span class="diff-ins">${text}</span>`;
-                } else if (type === -1) { 
-                    html += `<span class="diff-missing">${text}</span>`;
-                }
-            }
-        }
-    });
-
-    return html;
-}
-
-function splitIntoItems(text) {
-    let lines = text.split('\n');
-    let items = [];
-    let currentItem = "";
-    // 自動識別各種類型的項次編號 (如: 1. , 1、 , (一) , （一） , 一、 等等)
-    let pattern = /^\s*(?:\d+[、.]|\([\d一二三四五六七八九十]+\)|（[\d一二三四五六七八九十]+）|[一二三四五六七八九十]+[、.]|[A-Z][、.]|•|-)\s*/;
-    
-    for(let line of lines) {
-        if (pattern.test(line)) {
-            if (currentItem.trim() !== "") items.push(currentItem.trim());
-            currentItem = line.replace(pattern, ''); // 剃除編號
-        } else {
-            if (currentItem !== "") currentItem += "\n" + line;
-            else currentItem = line;
-        }
-    }
-    if (currentItem.trim() !== "") items.push(currentItem.trim());
-    
-    // 如果找不到明顯的編號，改為依據換行拆分，作為退路
-    if (items.length <= 1) {
-        return lines.map(s => s.replace(pattern, '').trim()).filter(s => s.length > 0);
-    }
-    return items;
-}
-
-function computeUnorderedDiff(std, user) {
-    if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
-
-    std = normalizeParentheses(std);
-    user = normalizeParentheses(user);
-
-    let stdItems = splitIntoItems(std);
-    let userItems = splitIntoItems(user);
-    
     let dmp = new diff_match_patch();
     
-    // 計算兩段文字相似度函式
-    function getSimilarity(t1, t2) {
-        let diffs = dmp.diff_main(t1, t2);
+    let stdItems = parseListItems(std);
+    let userItems = parseListItems(user);
+    
+    let hasStdMarkers = stdItems.some(i => i.marker.trim() !== "");
+    
+    // 如果標準答案沒有使用任何清單標記，退回原本的全段落比對
+    if (!hasStdMarkers) {
+        let diffs = dmp.diff_main(std, user);
         dmp.diff_cleanupSemantic(diffs);
-        let matchLen = 0;
-        diffs.forEach(p => { if (p[0] === 0) matchLen += p[1].length; });
-        return matchLen / Math.max(t1.length, t2.length);
+        let html = '';
+        diffs.forEach(part => {
+            if (part[0] === 0) html += `<span>${part[1]}</span>`;
+            else if (isPunctuationOnly(part[1])) html += `<span>${part[1]}</span>`;
+            else if (part[0] === 1) html += `<span class="diff-ins">${part[1]}</span>`;
+            else if (part[0] === -1) html += `<span class="diff-missing">${part[1]}</span>`;
+        });
+        return html;
     }
 
-    let usedUserIndices = new Set();
     let results = [];
+    let usedUserIndices = new Set();
     
-    // 為標準答案尋找最相似的作答
+    // 為標準答案的每一個項目，找出最相似的使用者作答項目
     for (let i = 0; i < stdItems.length; i++) {
+        let sItem = stdItems[i];
         let bestMatchIdx = -1;
-        let bestSim = 0;
+        let bestSim = -1;
+
         for (let j = 0; j < userItems.length; j++) {
             if (usedUserIndices.has(j)) continue;
-            let sim = getSimilarity(stdItems[i], userItems[j]);
+            let sim = getSimilarity(dmp, sItem.content, userItems[j].content);
             if (sim > bestSim) {
                 bestSim = sim;
                 bestMatchIdx = j;
             }
         }
-        
-        // 相似度大於 15% 視為有試圖回答該點
-        if (bestSim > 0.15) { 
-            usedUserIndices.add(bestMatchIdx);
-            let diffs = dmp.diff_main(stdItems[i], userItems[bestMatchIdx]);
+
+        // 相似度大於 10%，或是在相同順序且未使用（當作備用配對）
+        if (bestSim > 0.1 || (bestMatchIdx === -1 && i < userItems.length && !usedUserIndices.has(i))) {
+            let matchIdx = bestSim > 0.1 ? bestMatchIdx : i;
+            usedUserIndices.add(matchIdx);
+            let uItem = userItems[matchIdx];
+            
+            let diffs = dmp.diff_main(sItem.content, uItem.content);
             dmp.diff_cleanupSemantic(diffs);
             let html = '';
             diffs.forEach(part => {
-                let type = part[0];
-                let text = part[1];
-                if (type === 0) {
-                    html += `<span>${text}</span>`;
-                } else {
-                    if (isPunctuationOnly(text)) {
-                         html += `<span>${text}</span>`;
-                    } else {
-                        if (type === 1) { 
-                            html += `<span class="diff-ins">${text}</span>`;
-                        } else if (type === -1) { 
-                            html += `<span class="diff-missing">${text}</span>`;
-                        }
-                    }
-                }
+                if (part[0] === 0) html += `<span>${part[1]}</span>`;
+                else if (isPunctuationOnly(part[1])) html += `<span>${part[1]}</span>`;
+                else if (part[0] === 1) html += `<span class="diff-ins">${part[1]}</span>`;
+                else if (part[0] === -1) html += `<span class="diff-missing">${part[1]}</span>`;
             });
-            results.push(`<div class="mb-2 pb-1 border-bottom border-light">${html}</div>`);
+            
+            // 保留使用者原本填寫的項次編號
+            let markerHtml = uItem.marker ? `<span>${uItem.marker}</span>` : '';
+            results.push(`<div class="mb-1">${markerHtml}${html}</div>`);
         } else {
-            // 完全缺漏的項目
-            results.push(`<div class="mb-2 pb-1 border-bottom border-light"><span class="diff-missing">${stdItems[i]}</span></div>`);
+            // 完全漏答的項目，顯示標準答案的內容與編號
+            let missingText = sItem.marker + sItem.content;
+            results.push(`<div class="mb-1"><span class="diff-missing">${missingText}</span></div>`);
         }
     }
-    
-    // 將使用者多寫的內容視為多餘/錯誤
+
+    // 使用者多寫的項目
     for (let j = 0; j < userItems.length; j++) {
         if (!usedUserIndices.has(j)) {
-            results.push(`<div class="mb-2 pb-1 border-bottom border-light"><span class="diff-ins">${userItems[j]}</span></div>`);
+            let extraText = userItems[j].marker + userItems[j].content;
+            results.push(`<div class="mb-1"><span class="diff-ins">${extraText}</span></div>`);
         }
     }
-    
+
     return results.join('');
 }
 </script>
