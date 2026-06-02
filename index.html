@@ -4,12 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>海巡軍正43期-期末考 (修正版)</title>
+    <!-- 嵌入式資料庫 (用於匯出獨立網頁時保存狀態) -->
+    <script id="embedded-db" type="application/json"></script>
+    
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Diff Match Patch Library (Google) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
-    <!-- Mermaid JS for Diagrams (Fixed: 使用 v9.3.0 以支援全域變數) -->
+    <!-- Mermaid JS for Diagrams -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/9.3.0/mermaid.min.js"></script>
+    <!-- Mammoth JS for DOCX extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <!-- PDF.js for PDF extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- SheetJS for Excel extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Set worker for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    
     <style>
         body { font-family: "Microsoft JhengHei", "Heiti TC", sans-serif; background-color: #f0f2f5; padding-top: 0; }
         
@@ -43,7 +57,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 12px;
-            padding: 0; /* padding 設為 0 */
+            padding: 0;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             border: 1px solid #dee2e6;
         }
@@ -74,7 +88,7 @@
         #statsArea { display: none; transition: all 0.5s; }
         #quizArea { display: none; }
         #reviewArea { display: none; } 
-        #modeSelectionArea { display: none; } /* 新增：模式選擇區 */
+        #modeSelectionArea { display: none; } 
         .step-indicator { font-size: 0.9rem; color: #6c757d; margin-bottom: 5px; }
         
         /* Table styles for diff */
@@ -125,13 +139,9 @@
 
 <!-- Sticky Header Area -->
 <div id="stickyHeader">
-    <div class="control-card">
-       
-        <!-- Control Buttons -->
-        <!-- Fixed: Renamed ID to avoid duplicate with main controlPanel -->
+    <div class="control-card p-2">
+        <!-- Wake Lock Control -->
         <div id="headerWakeLockPanel">
-            
-            <!-- Wake Lock Control (Fixed Here) -->
             <div class="d-flex justify-content-center align-items-center bg-light rounded py-1 px-3 border" style="width: fit-content; margin: 0 auto;">
                 <div class="form-check form-switch m-0 d-flex align-items-center">
                     <input class="form-check-input my-0" type="checkbox" id="wakeLockSwitch">
@@ -146,28 +156,67 @@
 <div class="container">
     <div class="main-container">
         
-    <div class="control-card">
-        <div class="text-center mb-2">
-            <h4 class="fw-bold text-primary m-0">👮‍♂️ 海巡軍正43期-期末考</h4>
-            <p class="text-muted small m-0">整合題庫 (法律+專業)</p>
+    <div class="control-card pt-3 px-3 pb-2">
+        <div class="text-center mb-3">
+            <h4 class="fw-bold text-primary m-0 d-flex justify-content-center align-items-center">
+                <span id="appTitleText">👮‍♂️ 海巡軍正43期-期末考</span>
+                <button id="btnEditTitle" class="btn btn-sm text-muted ms-2 p-0 fs-5" title="修改標題名稱">✏️</button>
+            </h4>
+            <p class="text-muted small m-0 mt-1" id="appSubtitleText">整合題庫 (支援 Excel/Word/PDF 擴充匯入)</p>
         </div>
 
         <!-- Control Buttons -->
         <div id="controlPanel">
             <div class="d-flex flex-wrap gap-2 justify-content-center mb-2 align-items-center">
-                <!-- 視覺用的匯入狀態按鈕 -->
-                <button id="btnImport" class="btn btn-outline-secondary btn-sm" disabled>✅ 題庫載入中...</button>
+                <button id="btnManageBank" class="btn btn-secondary btn-sm">⚙️ 題庫管理</button>
                 <button id="btnReset" class="btn btn-danger btn-sm">🔄 全部重設</button>
                 <button id="btnReview" class="btn btn-info text-white btn-sm">📖 完整題庫</button>
                 <button id="btnStart" class="btn btn-primary btn-sm px-4">🚀 隨機測驗</button>
 		        <button id="btnBackFromReview" class="btn btn-sm btn-dark">⬅️ 返回主畫面</button>
             </div>
         </div>
+
+        <!-- Manage Bank Panel (Hidden by default) -->
+        <div id="manageBankPanel" class="mt-3 p-3 bg-light border border-secondary border-opacity-50 rounded" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <h6 class="fw-bold text-dark m-0">📥 題庫管理工具</h6>
+                <div>
+                    <button class="btn btn-sm btn-primary me-1" id="btnExportHtml" title="匯出包含系統與題庫的完整單一網頁檔案，可直接傳給別人使用">🌐 另存為獨立網頁</button>
+                    <button class="btn btn-sm btn-outline-primary me-1" id="btnExportBank" title="僅將題庫打包下載為 JSON 資料檔">💾 匯出 JSON</button>
+                    <button class="btn btn-sm btn-outline-success me-1" id="btnRestoreDefault" title="恢復最初內建的題庫">↻ 預設題庫</button>
+                    <button class="btn btn-sm btn-outline-danger" id="btnClearBank">🗑️ 清空</button>
+                </div>
+            </div>
+            <hr class="my-2">
+            
+            <!-- File Import Section -->
+            <div class="mb-3 p-2 border border-info rounded bg-white">
+                <label class="form-label small fw-bold text-info mb-1">📂 1. 上傳檔案解析 (支援 .xlsx, .docx, .pdf, .json)</label>
+                <input class="form-control form-control-sm mb-1" type="file" id="fileImport" accept=".txt,.docx,.pdf,.xlsx,.xls,.csv,.json">
+                <div id="fileReadStatus" class="small text-primary fw-bold" style="display:none;">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 檔案讀取解析中，請稍候...
+                </div>
+                <div class="small text-muted mt-1" style="font-size: 0.75rem;">💡 <strong>備份檔(.json) 會直接還原。</strong> Excel (.xlsx) 請建立：<code>類型</code>、<code>題目</code>、<code>答案</code> 欄位，可完美保留格式！</div>
+            </div>
+
+            <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label small fw-bold text-secondary m-0">✍️ 2. 確認或手動貼上題庫文字</label>
+                    <button id="btnAutoFormat" class="btn btn-sm btn-warning fw-bold text-dark py-0 px-2" title="自動修正常見的複製貼上格式問題">✨ 自動排版與修復</button>
+                </div>
+                <select id="importCategory" class="form-select form-select-sm mb-2">
+                    <option value="law">⚖️ 法律分類</option>
+                    <option value="professional">⚓ 專業分類</option>
+                </select>
+                <textarea id="importText" class="form-control form-control-sm mb-2" rows="8" placeholder="若非使用 Excel 匯入，請確保文字符合以下格式：\n[Type:問答題]\n這裡寫題目內容...\n答:\n這裡寫標準答案..."></textarea>
+                <button id="btnDoImport" class="btn btn-success btn-sm w-100 fw-bold">📥 3. 確認無誤，執行匯入</button>
+            </div>
+        </div>
     </div>
 
         <!-- Stats Display -->
-        <div id="statsArea" class="alert alert-success text-center mx-auto" style="max-width: 600px;">
-            <h5 class="alert-heading mb-2">📚 題庫匯入完成！</h5>
+        <div id="statsArea" class="alert alert-success text-center mx-auto mt-4" style="max-width: 600px;">
+            <h5 class="alert-heading mb-2">📚 題庫就緒狀態</h5>
             <div class="d-flex justify-content-center gap-4">
                 <span>⚖️ 法律題：<strong id="countLaw">0</strong></span>
                 <span>⚓ 專業題：<strong id="countProf">0</strong></span>
@@ -175,7 +224,7 @@
             <hr>
             <div class="text-center">總計：<strong id="countTotal">0</strong> 題</div>
             <div class="mt-3 text-muted small">
-                請點選上方「隨機測驗」按鈕開始
+                請點選上方「隨機測驗」按鈕開始練習
             </div>
         </div>
 
@@ -191,7 +240,7 @@
         </div>
 
         <!-- Quiz Area (Random Mode) -->
-        <div id="quizArea">
+        <div id="quizArea" class="mt-4">
             <div class="card border-0 shadow">
                 <div class="card-header card-header-custom d-flex justify-content-between align-items-center p-3">
                     <div>
@@ -203,15 +252,20 @@
                 
                 <div class="card-body p-4">
                     <!-- Question -->
-                    <h5 class="card-title text-secondary mb-3">題目：</h5>
+                    <h5 class="card-title text-secondary mb-3" id="quizQuestionLabel">題目：</h5>
                     <div class="alert alert-light border border-secondary border-opacity-25 shadow-sm">
-                        <!-- Fixed: Changed to innerHTML to support images -->
                         <h4 id="questionText" style="line-height: 1.5; white-space: pre-wrap;">題目載入中...</h4>
                     </div>
                     
                     <!-- Answer Input -->
                     <div class="mb-3 mt-4">
-                        <label for="userAnswer" class="form-label fw-bold text-primary">✍️ 您的答案：</label>
+                        <div class="d-flex justify-content-between align-items-end mb-2">
+                            <label for="userAnswer" class="form-label fw-bold text-primary m-0">✍️ 您的答案：</label>
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input" type="checkbox" id="unorderedMatch" checked>
+                                <label class="form-check-label small fw-bold text-muted" for="unorderedMatch" style="cursor:pointer;">不限順序比對</label>
+                            </div>
+                        </div>
                         <div class="form-text mb-2 text-success">💡 <strong>智慧比對啟用中</strong>：系統會自動辨識並忽略項次編號（如 1.、一、(一) 等）的格式差異，且<strong>不限作答順序</strong>，請安心作答。</div>
                         <textarea class="form-control fs-5" id="userAnswer" rows="8" placeholder="請在此輸入答案..."></textarea>
                     </div>
@@ -261,7 +315,7 @@
         </div>
 
         <!-- Review Area (Practice Mode) -->
-        <div id="reviewArea">
+        <div id="reviewArea" class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
                 <h4 class="fw-bold text-dark"><i class="bi bi-book"></i> 完整題庫與練習</h4>
                 <div class="d-flex align-items-center gap-2">
@@ -302,8 +356,7 @@ if (typeof mermaid !== 'undefined') {
 }
 
 /**
- * 法律題庫 (共 18 題)
- * 來源：法律.pdf
+ * 法律題庫 (預設)
  */
 const rawDataLaw = `
 [Type:問答題]
@@ -500,23 +553,16 @@ const rawDataLaw = `
 `;
 
 /**
- * 專業題庫 (共 13 題)
- * 來源：專業.pdf
+ * 專業題庫 (預設)
  */
 const rawDataProf = `
 [Type:申論題]
 犯罪偵查實務上所謂之「釣魚」,可區分為哪二種,並請就其實質內容提出解釋。
 提示詞:臺灣臺中地方法院114年度訴字第772 號刑事判決:證據能力
 答:
-一、偵查(釣魚)手段定義：
-1、誘捕偵查：指對於原「已犯罪或具有犯罪故意」之人，以引誘之方式，使其暴露犯罪事證，再加以逮捕或偵辦者。原則上查獲之事證具有證據能力
-2、陷害教唆：指行為人原「不具」犯罪之故意，純因司法警察之設計教唆，始萌生犯意。原則上查獲之事證認為不具證據能力
-二、證據能力：
-本案所查獲之事證具有證據能力，理由如下：
-犯嫌於社群媒體公開販售二級毒品訊息給不特定人仕，具有主觀犯意，後續為司法警察佯裝買家引誘犯嫌與其交易，再加以逮捕，符合誘捕偵查的偵查手段定義，故查獲之事證具證據能力
-三、論罪科刑：
-1、公開販售二級毒品已違反毒品危害防制條例第4條第2項，後續與佯裝成買家之司法警察約定交易並遭逮捕，雖交易未完成，仍違反同條第6項未遂犯罰之
-2、刑法第25條第2項，未遂犯，以有特別規定為限者，並得按既遂犯之刑減輕之
+1、「誘捕偵查」:指對於原「以犯罪或具有犯罪故意」之人,以引誘之方式,使其暴露犯罪事證,再加以逮捕或偵辦者。原則上查獲之事證具有證據能力。
+2、「陷害教唆」:指行為人原「不具」犯罪之故意,純因司法警察之設計教唆。始萌生犯意。原則上查獲之事證認為不具證據能力。
+
 [Type:簡答題]
 一、請問物證功用為何?
 答:
@@ -622,15 +668,15 @@ const rawDataProf = `
 [Type:申論題]
 刺網雖然構造簡單,但為了刺網漁業長久的發展,有那些問題值得加以探討?其內容與原因為何?
 答:
-<strong>一.混獲的問題</strong>
+一.混獲的問題
 刺網作業時,除可捕獲魚類外,偶而亦有海豚、鳥類等動物上網,而北太平洋流刺網漁場,更有混獲有鮭、鱒魚之問題,因此公海刺網作業受到禁止。目前雖沿近海流刺網未加禁止,但業者仍應儘量避開有上述動物棲息之海域,否則將來刺網漁業之發展將仍受到國際保育團體之反對。
-<strong>二.流失、廢棄之網具所引發對資源破壞之問題</strong>
-幽靈網具:刺網作業流失的網具,或漁民任意將不堪使用網具的海拋,由於合成纖維不易腐壞,將繼續纏絡魚類。此被纏絡的魚類又不能為人類所利用,因此將造成資源極大的浪費。
-<strong>三.漁獲物的品質問題</strong>
+二.流失、廢棄之網具所引發對資源破壞之問題
+幽靈網具:刺網作業流失的網具,或漁民任意將不堪使用網具的海拋,由於合成織維不易腐壞,將繼續纏絡魚類。此被纏絡的魚類又不能為人類所利用,因此將造成資源極大的浪費。
+三.漁獲物的品質問題
 刺網之漁獲因多層次網目,魚體多少有所損傷,因而價格通常較魚體無損傷者低。尤其漁獲過多時,常有魚賤傷漁,致血本無歸之情形。此時業者應適時地減少作業,以調節供需。
-<strong>四.三重刺網對資源破壞的問題</strong>
+四.三重刺網對資源破壞的問題
 單重刺網能讓小魚通過,對資源的影響尚小。然而三重刺網之內網,因其網目甚小,對於資源,不論大小均能將之漁獲。雖然三重刺網的漁獲效率甚高,但若漫無限制的使用,對資源將有莫大的破壞力,因此政府主管機關,應適當地限制三重刺網的使用。
-<strong>五.過漁的問題</strong>
+五.過漁的問題
 本省沿岸近海漁業資源,由於過量的漁獲,魚體體型愈來愈小,現已有減少的現象。業者為增加漁獲,因而縮小網目,如此惡性循環,漁業資源之減少將來將不將堪設想。
 `;
 
@@ -639,30 +685,84 @@ let usedIndices = new Set();
 let currentIndex = -1;
 let currentQ = null;
 let wakeLock = null; 
-let currentMode = 'all'; // 'all', 'law', 'professional'
+let currentMode = 'all'; 
 
-// 初始化：解析題庫
-window.onload = function() {
-    parseQuestionBank(rawDataLaw, 'law');
-    parseQuestionBank(rawDataProf, 'professional');
-    updateStats();
-    
-    // 初始化 Wake Lock 開關狀態 (預設關閉)
-    const switchEl = document.getElementById('wakeLockSwitch');
-    if (switchEl) switchEl.checked = false;
-    
-    // 按鈕狀態更新
-    const importBtn = document.getElementById('btnImport');
-    if(importBtn) {
-        importBtn.className = "btn btn-outline-success btn-sm";
-        importBtn.innerHTML = "✅ 題庫已載入";
-        importBtn.disabled = true;
+// === 核心儲存功能 (LocalStorage) ===
+function saveData() {
+    const title = document.getElementById('appTitleText').innerText;
+    const dataToSave = {
+        title: title,
+        bank: questionBank,
+        instanceId: window.currentInstanceId
+    };
+    localStorage.setItem('haixun_quiz_data', JSON.stringify(dataToSave));
+}
+
+// 優先載入機制：匯出網頁(embedded) > LocalStorage
+function loadData() {
+    const dbScript = document.getElementById('embedded-db');
+    let embeddedData = null;
+    if (dbScript && dbScript.textContent.trim()) {
+        try { embeddedData = JSON.parse(dbScript.textContent); } catch(e) { console.error("Embedded DB parse error"); }
+    }
+
+    const localDataStr = localStorage.getItem('haixun_quiz_data');
+    let localData = null;
+    if (localDataStr) {
+        try { localData = JSON.parse(localDataStr); } catch(e) { console.error("Local storage parse error"); }
+    }
+
+    let finalData = null;
+
+    if (embeddedData) {
+        // 如果這個網頁有內建的備份，且跟本機存的 ID 不一樣（代表它是剛下載開啟的新檔案！）
+        if (!localData || localData.instanceId !== embeddedData.instanceId) {
+            finalData = embeddedData;
+        } else {
+            // 已經是舊檔案了，相信瀏覽器最新的存檔
+            finalData = localData;
+        }
+    } else if (localData) {
+        finalData = localData;
+    }
+
+    if (finalData && finalData.bank) {
+        document.getElementById('appTitleText').innerText = finalData.title || "海巡軍正43期-期末考";
+        document.title = finalData.title || "海巡軍正43期-期末考";
+        questionBank = finalData.bank;
+    } else if (!localStorage.getItem('haixun_quiz_cleared')) {
+        parseQuestionBank(rawDataLaw, 'law');
+        parseQuestionBank(rawDataProf, 'professional');
     }
     
-    document.getElementById('statsArea').style.display = 'block';
+    // 初始化 Instance ID
+    if (!window.currentInstanceId) {
+        window.currentInstanceId = (finalData && finalData.instanceId) ? finalData.instanceId : 'id_' + Date.now();
+    }
+    saveData();
+}
+
+// 初始化
+window.onload = function() {
+    loadData();
+    updateStats();
+    
+    const switchEl = document.getElementById('wakeLockSwitch');
+    if (switchEl) switchEl.checked = false;
 };
 
-// 解析函數 (新增分類參數)
+// 標題編輯功能 (含自動儲存)
+document.getElementById('btnEditTitle').addEventListener('click', () => {
+    let currentTitle = document.getElementById('appTitleText').innerText;
+    let newTitle = prompt("請輸入新的標題名稱：", currentTitle);
+    if (newTitle !== null && newTitle.trim() !== "") {
+        document.getElementById('appTitleText').innerText = newTitle.trim();
+        document.title = newTitle.trim();
+        saveData();
+    }
+});
+
+// 解析函數
 function parseQuestionBank(rawString, category) {
     const questions = rawString.split('[Type:');
     
@@ -673,11 +773,13 @@ function parseQuestionBank(rawString, category) {
         let type = block.substring(0, typeEnd);
         let content = block.substring(typeEnd + 1).trim();
         
-        // 分割題目與答案
-        let parts = content.split(/答[:：]|Ans[:：]/i); // 兼容 "答：" 和 "Ans:"
+        let parts = content.split(/答[:：]|Ans[:：]/i); 
         if (parts.length >= 2) {
             let qText = parts[0].trim();
             let aText = parts.slice(1).join('答：').trim();
+            
+            const qPrefixRegex = /^\s*(?:Q\d+\s*[:：.]?\s*|題目\s*\d+\s*(?:\(.*?\))?\s*[:：]?|第\s*[一二三四五六七八九十百\d]+\s*題\s*[:：]?|[壹貳參肆伍陸柒捌玖拾一二三四五六七八九十\d]+\s*[、.]\s*|\([\d一二三四五六七八九十]+\)\s*|（[\d一二三四五六七八九十]+）\s*)/i;
+            qText = qText.replace(qPrefixRegex, '');
             
             questionBank.push({
                 type: type,
@@ -699,43 +801,416 @@ function updateStats() {
     document.getElementById('countTotal').innerText = questionBank.length;
 }
 
-// 點選「開始測驗」-> 顯示模式選擇
-document.getElementById('btnStart').addEventListener('click', () => {
+document.getElementById('btnManageBank').addEventListener('click', () => {
+    const panel = document.getElementById('manageBankPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+// 新增：匯出為獨立網頁 HTML
+document.getElementById('btnExportHtml').addEventListener('click', () => {
+    saveData(); // 確保資料是最新的
+    
+    // 產生一個新的獨立 ID 給匯出的檔案
+    const newInstanceId = 'id_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    
+    const dataToExport = {
+        title: document.getElementById('appTitleText').innerText,
+        bank: questionBank,
+        instanceId: newInstanceId
+    };
+
+    // 複製目前的 HTML DOM
+    let clone = document.documentElement.cloneNode(true);
+    
+    // 更新或注入 embedded-db
+    let dbScript = clone.querySelector('#embedded-db');
+    if (!dbScript) {
+        dbScript = document.createElement('script');
+        dbScript.id = 'embedded-db';
+        dbScript.type = 'application/json';
+        clone.querySelector('head').appendChild(dbScript);
+    }
+    dbScript.textContent = JSON.stringify(dataToExport, null, 2);
+
+    // 更新 title 標籤
+    let titleEl = clone.querySelector('title');
+    if(titleEl) titleEl.innerText = dataToExport.title;
+
+    // 清理 DOM 中使用者輸入的暫存狀態，讓開啟時看起來是乾淨的
+    clone.querySelectorAll('textarea').forEach(el => el.innerHTML = '');
+    clone.querySelector('#quizArea').style.display = 'none';
+    clone.querySelector('#reviewArea').style.display = 'none';
+    clone.querySelector('#modeSelectionArea').style.display = 'none';
+    clone.querySelector('#manageBankPanel').style.display = 'none';
+    clone.querySelector('#resultArea').style.display = 'none';
+    clone.querySelector('#fileReadStatus').style.display = 'none';
+    clone.querySelector('#statsArea').style.display = 'block';
+    clone.querySelector('#btnStart').disabled = false;
+    clone.querySelector('#reviewContent').innerHTML = ''; 
+    
+    // 清理 WakeLock 開關狀態
+    const wakeSwitch = clone.querySelector('#wakeLockSwitch');
+    if(wakeSwitch) wakeSwitch.checked = false;
+    const wakeStatus = clone.querySelector('#wakeLockStatus');
+    if(wakeStatus) {
+        wakeStatus.innerText = '(關閉)';
+        wakeStatus.classList.remove('text-success', 'wakelock-active');
+    }
+
+    // 產生 HTML 字串並觸發下載
+    const htmlStr = "<!DOCTYPE html>\n" + clone.outerHTML;
+    const blob = new Blob([htmlStr], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${dataToExport.title}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // 把目前的視窗 ID 也更新為這個新 ID，以保持同步
+    window.currentInstanceId = newInstanceId;
+    saveData();
+    
+    alert("✅ 網頁已成功打包匯出！\n\n您可以將下載好的 `.html` 檔案直接傳給任何人，對方只要使用瀏覽器開啟，就會看到您剛才編輯完的最新題庫與標題！");
+});
+
+// 新增：匯出 JSON 備份功能
+document.getElementById('btnExportBank').addEventListener('click', () => {
     if (questionBank.length === 0) {
-        alert("題庫為空，請檢查解析！");
+        alert("目前題庫為空，沒有可以匯出的資料！");
         return;
     }
     
-    // 顯示模式選擇區，隱藏按鈕區
-    document.getElementById('btnStart').disabled = true; // 暫時禁用
-    document.getElementById('modeSelectionArea').style.display = 'block';
-    document.getElementById('statsArea').style.display = 'none'; // 隱藏統計
+    const dataToExport = {
+        title: document.getElementById('appTitleText').innerText,
+        bank: questionBank
+    };
     
-    // 滾動到選擇區
+    const jsonStr = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${dataToExport.title}_備份.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+});
+
+// 新增：還原預設題庫
+document.getElementById('btnRestoreDefault').addEventListener('click', () => {
+    if (confirm("確定要放棄目前的題庫，還原為最初內建的 31 題嗎？")) {
+        questionBank = [];
+        usedIndices.clear();
+        localStorage.removeItem('haixun_quiz_cleared'); // 移除清空標記
+        parseQuestionBank(rawDataLaw, 'law');
+        parseQuestionBank(rawDataProf, 'professional');
+        saveData();
+        updateStats();
+        if (document.getElementById('reviewArea').style.display === 'block') renderReviewList();
+        alert("已成功還原為預設題庫！");
+    }
+});
+
+// 檔案匯入處理
+document.getElementById('fileImport').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('fileReadStatus');
+    statusEl.style.display = 'block';
+    document.getElementById('btnDoImport').disabled = true;
+
+    try {
+        const fileName = file.name.toLowerCase();
+
+        // 處理 JSON 備份檔直入
+        if (fileName.endsWith('.json')) {
+            const jsonText = await extractTextFromTxt(file);
+            const data = JSON.parse(jsonText);
+            
+            if (data && data.bank && Array.isArray(data.bank)) {
+                if (confirm("偵測到題庫備份檔！\n\n[確定]：取代目前所有題庫\n[取消]：加入目前題庫後方")) {
+                    questionBank = data.bank;
+                } else {
+                    questionBank = questionBank.concat(data.bank);
+                }
+                
+                if (data.title) {
+                    document.getElementById('appTitleText').innerText = data.title;
+                    document.title = data.title;
+                }
+                
+                saveData();
+                updateStats();
+                if (document.getElementById('reviewArea').style.display === 'block') renderReviewList();
+                alert("✅ 備份檔匯入成功！");
+                statusEl.style.display = 'none';
+                document.getElementById('btnDoImport').disabled = false;
+                e.target.value = ''; 
+                return; // 直接結束，不放到 textarea
+            } else {
+                throw new Error("備份檔格式不符！");
+            }
+        }
+
+        // 其他格式解析
+        let extractedText = '';
+        if (fileName.endsWith('.txt')) {
+            extractedText = await extractTextFromTxt(file);
+        } else if (fileName.endsWith('.docx')) {
+            extractedText = await extractTextFromDocx(file);
+        } else if (fileName.endsWith('.pdf')) {
+            extractedText = await extractTextFromPDF(file);
+        } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+            extractedText = await extractTextFromExcel(file);
+        }
+
+        document.getElementById('importText').value = extractedText;
+        if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')) {
+            alert("✅ Excel 檔案讀取成功！系統已自動將欄位轉換為系統格式，請確認無誤後點擊「執行匯入」。");
+        } else {
+            alert("✅ 檔案文字擷取成功！請在下方文字框確認或微調格式，確認無誤後點擊「執行匯入」。\n\n提示：Word 或 PDF 的『自動編號』有時會因格式限制而遺失，強烈建議使用 Excel 檔案來匯入題庫！");
+        }
+
+    } catch (error) {
+        console.error("檔案解析失敗:", error);
+        alert("❌ 檔案解析失敗: " + error.message);
+    } finally {
+        statusEl.style.display = 'none';
+        document.getElementById('btnDoImport').disabled = false;
+        // 重置 input 以允許重複上傳相同檔案
+        e.target.value = ''; 
+    }
+});
+
+function extractTextFromTxt(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(new Error("無法讀取 TXT 檔案"));
+        reader.readAsText(file);
+    });
+}
+
+function extractTextFromDocx(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const arrayBuffer = e.target.result;
+                const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+                resolve(result.value);
+            } catch (err) {
+                reject(new Error("DOCX 解析失敗"));
+            }
+        };
+        reader.onerror = () => reject(new Error("無法讀取 DOCX 檔案"));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+async function extractTextFromPDF(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const typedArray = new Uint8Array(e.target.result);
+                const pdf = await pdfjsLib.getDocument({data: typedArray}).promise;
+                let fullText = "";
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' '); 
+                    fullText += pageText + "\n\n";
+                }
+                resolve(fullText);
+            } catch (err) {
+                reject(new Error("PDF 解析失敗，可能是加密或格式不支援"));
+            }
+        };
+        reader.onerror = () => reject(new Error("無法讀取 PDF 檔案"));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function extractTextFromExcel(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                
+                let formattedText = "";
+                json.forEach((row) => {
+                    let type = row['類型'] || row['題型'] || row['Type'] || row['type'] || '問答題';
+                    let question = row['題目'] || row['問題'] || row['Question'] || row['question'] || '';
+                    let answer = row['答案'] || row['解答'] || row['Answer'] || row['answer'] || '';
+                    
+                    if (!question && !answer) {
+                        const keys = Object.keys(row);
+                        if (keys.length >= 3) {
+                            type = row[keys[0]];
+                            question = row[keys[1]];
+                            answer = row[keys[2]];
+                        } else if (keys.length === 2) {
+                            question = row[keys[0]];
+                            answer = row[keys[1]];
+                        }
+                    }
+
+                    if (question && answer) {
+                        formattedText += `[Type:${type}]\n${question}\n答:\n${answer}\n\n`;
+                    }
+                });
+                
+                if (!formattedText.trim()) {
+                    formattedText = XLSX.utils.sheet_to_csv(worksheet);
+                    alert("找不到明確的標題欄位，已轉為純文字。建議設定「類型」、「題目」、「答案」為欄位標題。");
+                }
+                resolve(formattedText);
+            } catch (err) {
+                reject(new Error("Excel 解析失敗，請確認檔案內容"));
+            }
+        };
+        reader.onerror = () => reject(new Error("無法讀取 Excel 檔案"));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+document.getElementById('btnClearBank').addEventListener('click', () => {
+    if(confirm("確定要清空目前所有的題庫嗎？")) {
+        questionBank = [];
+        usedIndices.clear();
+        currentIndex = -1;
+        currentQ = null;
+        localStorage.setItem('haixun_quiz_cleared', 'true'); // 標記為已清空
+        saveData(); // 儲存空狀態
+        updateStats();
+        if (document.getElementById('reviewArea').style.display === 'block') {
+            renderReviewList();
+        }
+        alert("目前題庫已全數清空！您可以開始匯入新題目。");
+    }
+});
+
+document.getElementById('btnDoImport').addEventListener('click', () => {
+    const cat = document.getElementById('importCategory').value;
+    const text = document.getElementById('importText').value;
+    
+    if(!text.trim()) { 
+        alert("請先在下方文字框貼上或上傳題庫內容！"); 
+        return; 
+    }
+    
+    let beforeCount = questionBank.length;
+    parseQuestionBank(text, cat);
+    let afterCount = questionBank.length;
+    let addedCount = afterCount - beforeCount;
+    
+    if(addedCount > 0) {
+        saveData(); // 匯入成功後立即自動儲存
+        localStorage.removeItem('haixun_quiz_cleared'); // 清除清空標記
+        updateStats();
+        document.getElementById('importText').value = ''; 
+        if (document.getElementById('reviewArea').style.display === 'block') {
+            renderReviewList(); 
+        }
+        alert(`匯入成功！已新增 ${addedCount} 題並自動儲存。`);
+    } else {
+        alert("無法匯入任何題目。請確認格式是否正確。");
+    }
+});
+
+document.getElementById('btnAutoFormat').addEventListener('click', () => {
+    let text = document.getElementById('importText').value;
+    if (!text.trim()) {
+        alert("請先貼上或匯入需要修復的文字！");
+        return;
+    }
+
+    text = text.replace(/={3,}|-{3,}|_{3,}/g, '');
+    text = text.replace(/\[Page\s*\d+\]/gi, '');
+    text = text.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
+
+    let currentType = "問答題"; 
+    let lines = text.split('\n');
+    let processedLines = [];
+    let expectingQuestion = true; 
+    let buffer = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+
+        let typeMatch = line.match(/^(?:[壹貳參肆伍陸柒捌玖拾一二三四五六七八九十]+[、.])?\s*(簡答題|申論題|問答題|選擇題|是非題)[:：]?$/);
+        if (typeMatch) {
+            currentType = typeMatch[1];
+            expectingQuestion = true;
+            continue; 
+        }
+
+        let ansMatch = line.match(/^(?:答|解答|參考答案)\s*[:：](.*)$/);
+        
+        if (ansMatch) {
+            expectingQuestion = true; 
+            if (buffer.length > 0) {
+                let qText = buffer.join('\n');
+                processedLines.push(`\n[Type:${currentType}]`);
+                processedLines.push(qText);
+                buffer = []; 
+            }
+            processedLines.push("答:");
+            if (ansMatch[1].trim()) processedLines.push(ansMatch[1].trim());
+        } else {
+            if (expectingQuestion && processedLines.length > 0 && processedLines[processedLines.length - 1] === "答:") {
+                 processedLines.push(line);
+            } else if (processedLines.length > 0 && !processedLines[processedLines.length - 1].startsWith("[Type:") && !expectingQuestion) {
+                 processedLines.push(line);
+            } else {
+                 buffer.push(line);
+            }
+        }
+    }
+    
+    document.getElementById('importText').value = processedLines.join('\n').trim();
+    alert("✨ 自動排版完成！請快速預覽結果。");
+});
+
+document.getElementById('btnStart').addEventListener('click', () => {
+    if (questionBank.length === 0) {
+        alert("題庫為空，請先匯入題庫再開始測驗！");
+        return;
+    }
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('modeSelectionArea').style.display = 'block';
+    document.getElementById('statsArea').style.display = 'none'; 
     document.getElementById('modeSelectionArea').scrollIntoView({ behavior: 'smooth' });
 });
 
-// 取消模式選擇
 window.cancelModeSelection = function() {
     document.getElementById('modeSelectionArea').style.display = 'none';
-    document.getElementById('statsArea').style.display = 'block'; // 顯示回統計
+    document.getElementById('statsArea').style.display = 'block';
     document.getElementById('btnStart').disabled = false;
 };
 
-// 開始指定模式的測驗
 window.startQuizMode = function(mode) {
     currentMode = mode;
     document.getElementById('modeSelectionArea').style.display = 'none';
     document.getElementById('statsArea').style.display = 'none';
     document.getElementById('quizArea').style.display = 'block';
-    
-    // 開始出題
     nextQuestion();
 };
 
-// 隨機出題 (支援模式過濾)
 function nextQuestion() {
-    // 1. 根據模式篩選可用題目索引
     let availableIndices = [];
     questionBank.forEach((q, index) => {
         if (currentMode === 'all' || q.category === currentMode) {
@@ -743,13 +1218,11 @@ function nextQuestion() {
         }
     });
 
-    // 2. 過濾掉已出過的題目
     let validIndices = availableIndices.filter(idx => !usedIndices.has(idx));
 
     if (validIndices.length === 0) {
         if (availableIndices.length === 0) {
              alert("該類別沒有題目！");
-             // 重置狀態
              document.getElementById('quizArea').style.display = 'none';
              document.getElementById('statsArea').style.display = 'block';
              document.getElementById('btnStart').disabled = false;
@@ -759,7 +1232,6 @@ function nextQuestion() {
         return;
     }
 
-    // 3. 隨機選題
     let rand = Math.floor(Math.random() * validIndices.length);
     let idx = validIndices[rand];
 
@@ -767,17 +1239,14 @@ function nextQuestion() {
     currentIndex = idx;
     currentQ = questionBank[idx];
 
-    // UI 更新
     let categoryName = currentQ.category === 'law' ? '法律' : '專業';
     document.getElementById('qTypeBadge').innerText = `${categoryName} | ${currentQ.type}`;
     
-    // 計算該模式下的進度
     let doneCount = 0;
     availableIndices.forEach(i => { if(usedIndices.has(i)) doneCount++; });
     
     document.getElementById('qProgress').innerText = `進度: ${doneCount} / ${availableIndices.length}`;
-    
-    // Fixed: Use innerHTML to allow images
+    document.getElementById('quizQuestionLabel').innerText = `題目 (第 ${doneCount} 題)：`;
     document.getElementById('questionText').innerHTML = currentQ.q;
     
     document.getElementById('userAnswer').value = '';
@@ -788,15 +1257,13 @@ function nextQuestion() {
 
 document.getElementById('btnNext').addEventListener('click', nextQuestion);
 
-// 全部重設
 document.getElementById('btnReset').addEventListener('click', () => {
-    if(confirm('確定要全部重設嗎？這將清除作答紀錄並回到初始畫面。')) {
+    if(confirm('確定要重設測驗進度嗎？（不會刪除題庫）')) {
         usedIndices.clear();
         currentIndex = -1;
         currentQ = null;
         currentMode = 'all';
         
-        // 重置介面
         document.getElementById('userAnswer').value = '';
         document.getElementById('resultArea').style.display = 'none';
         document.getElementById('quizArea').style.display = 'none';
@@ -805,21 +1272,15 @@ document.getElementById('btnReset').addEventListener('click', () => {
         
         document.getElementById('statsArea').style.display = 'block';
         document.getElementById('btnStart').disabled = false;
-        
-        alert('已重設所有紀錄！請重新點選「🚀 隨機測驗模式」。');
     }
 });
 
-// 檢視完整題庫功能 (支援過濾)
 let currentReviewFilter = 'all';
 
 document.getElementById('btnReview').addEventListener('click', () => {
     document.getElementById('statsArea').style.display = 'none';
     document.getElementById('quizArea').style.display = 'none';
-    // 不再隱藏 controlPanel，因為它現在在 sticky header 中
-    // document.getElementById('controlPanel').style.display = 'none'; 
     document.getElementById('reviewArea').style.display = 'block';
-    
     renderReviewList();
 });
 
@@ -836,18 +1297,16 @@ function renderReviewList() {
                                    .filter(q => currentReviewFilter === 'all' || q.category === currentReviewFilter);
 
     if (filteredList.length === 0) {
-        reviewContent.innerHTML = '<p class="text-center text-muted">目前沒有題目資料。</p>';
+        reviewContent.innerHTML = '<div class="alert alert-warning text-center mt-3">目前該類別沒有任何題目資料。</div>';
         return;
     }
 
-    filteredList.forEach((q) => {
+    filteredList.forEach((q, displayIdx) => {
         const index = q.originalIndex;
         const itemDiv = document.createElement('div');
         itemDiv.className = 'card mb-3 shadow-sm review-item';
-        // Fixed: Add data-id attribute so the toggle button can work
         itemDiv.setAttribute('data-id', index);
         
-        // 類別標籤顏色
         let catBadgeClass = q.category === 'law' ? 'bg-success' : 'bg-warning text-dark';
         let catName = q.category === 'law' ? '法律' : '專業';
 
@@ -856,14 +1315,14 @@ function renderReviewList() {
                 <div class="d-flex justify-content-between flex-wrap gap-2">
                     <h5 class="review-q">
                         <span class="badge ${catBadgeClass} me-1">${catName}</span>
-                        <span class="badge bg-primary me-2">Q${index + 1}</span> 
+                        <span class="badge bg-primary me-2">Q${displayIdx + 1}</span> 
                         [${q.type}]
                     </h5>
                     <button class="btn btn-sm btn-outline-primary btn-toggle-ans" onclick="toggleAnswer(${index})">
                         👁️ 顯示/隱藏答案
                     </button>
                 </div>
-                <p class="card-text fw-bold" style="white-space: pre-wrap;">${q.q}</p>
+                <div class="card-text fw-bold mb-3 mt-2" style="white-space: pre-wrap;">${q.q}</div>
                 
                 <div id="ans-container-${index}" class="review-a-container" style="display:none;">
                     <div class="badge bg-secondary mb-2">標準答案</div>
@@ -871,9 +1330,15 @@ function renderReviewList() {
                 </div>
 
                 <div id="practice-container-${index}" class="review-practice-area">
-                    <label class="form-label text-muted small">✍️ 自我練習區：</label>
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <label class="form-label text-muted small m-0">✍️ 自我練習區：</label>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="practice-unordered-${index}" checked>
+                            <label class="form-check-label small text-muted" for="practice-unordered-${index}" style="cursor:pointer; font-size: 0.8rem;">不限順序</label>
+                        </div>
+                    </div>
                     <textarea class="form-control mb-2" id="practice-input-${index}" rows="4" placeholder="在此輸入您的答案..."></textarea>
-                    <button class="btn btn-success btn-sm w-100" onclick="checkPractice(${index})">✅ 送出比對</button>
+                    <button class="btn btn-success btn-sm w-100 fw-bold" onclick="checkPractice(${index})">✅ 送出比對</button>
                     <div id="practice-result-${index}" class="diff-result-mini" style="display:none;"></div>
                 </div>
             </div>
@@ -882,157 +1347,64 @@ function renderReviewList() {
     });
 }
 
-// 螢幕常亮功能 (Wake Lock API)
-// 只需要一個開關監聽器，因為只有一個開關在 sticky header
-async function toggleWakeLock(checked) {
-    const statusText = document.getElementById('wakeLockStatus');
-
-    if (checked) {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-                if(statusText) {
-                    statusText.innerText = "(已開啟)";
-                    statusText.classList.add("text-success");
-                    statusText.classList.add("wakelock-active");
-                }
-                
-                wakeLock.addEventListener('release', () => {
-                    console.log('Screen Wake Lock released:', wakeLock.released);
-                    if(wakeLock.released) {
-                         const switchEl = document.getElementById('wakeLockSwitch');
-                         if(switchEl) switchEl.checked = false;
-                         if(statusText) {
-                            statusText.innerText = "(已關閉)";
-                            statusText.classList.remove("text-success");
-                            statusText.classList.remove("wakelock-active");
-                        }
-                    }
-                });
-            } else {
-                alert("您的瀏覽器不支援螢幕常亮功能 (Wake Lock API)。");
-                const switchEl = document.getElementById('wakeLockSwitch');
-                if(switchEl) switchEl.checked = false;
-            }
-        } catch (err) {
-            console.error(`${err.name}, ${err.message}`);
-            if(statusText) statusText.innerText = "(啟動失敗)";
-            const switchEl = document.getElementById('wakeLockSwitch');
-            if(switchEl) switchEl.checked = false;
-        }
-    } else {
-        if (wakeLock !== null) {
-            await wakeLock.release();
-            wakeLock = null;
-            if(statusText) {
-                statusText.innerText = "(已關閉)";
-                statusText.classList.remove("text-success");
-                statusText.classList.remove("wakelock-active");
-            }
-        }
-    }
-}
-
-document.getElementById('wakeLockSwitch').addEventListener('change', function() { toggleWakeLock(this.checked); });
-
-document.addEventListener('visibilitychange', async () => {
-    if (wakeLock !== null && document.visibilityState === 'visible') {
-        toggleWakeLock(true); // 重新申請
-    }
-});
-
-// 切換單題答案顯示/隱藏
 window.toggleAnswer = function(index) {
     const ansContainer = document.getElementById(`ans-container-${index}`);
-    
-    if (ansContainer.style.display === 'none') {
-        ansContainer.style.display = 'block';
-    } else {
-        ansContainer.style.display = 'none';
-    }
+    ansContainer.style.display = ansContainer.style.display === 'none' ? 'block' : 'none';
 };
 
-// 練習模式比對功能
 window.checkPractice = function(index) {
     const userAns = document.getElementById(`practice-input-${index}`).value;
     const stdAns = questionBank[index].a;
     const resultDiv = document.getElementById(`practice-result-${index}`);
+    const isUnordered = document.getElementById(`practice-unordered-${index}`).checked;
     
-    if (!userAns.trim()) {
-        alert("請先輸入答案！");
-        return;
-    }
+    if (!userAns.trim()) { alert("請先輸入答案！"); return; }
 
-    const diffHtml = computeDiff(stdAns, userAns);
+    const diffHtml = isUnordered ? computeUnorderedDiff(stdAns, userAns) : computeDiff(stdAns, userAns);
     resultDiv.innerHTML = `<strong>比對結果：</strong><br>${diffHtml}`;
     resultDiv.style.display = 'block';
 };
 
-// 全部顯示/隱藏切換
 let isAllVisible = false;
 document.getElementById('btnToggleAll').addEventListener('click', () => {
     isAllVisible = !isAllVisible;
-    const currentItems = document.querySelectorAll('.review-item');
-    currentItems.forEach(item => {
+    document.querySelectorAll('.review-item').forEach(item => {
         const index = item.getAttribute('data-id');
-        // Check if index exists before trying to use it
         if (index !== null) {
             const ansContainer = document.getElementById(`ans-container-${index}`);
-            if(ansContainer) {
-                if(isAllVisible) {
-                    ansContainer.style.display = 'block';
-                } else {
-                    ansContainer.style.display = 'none';
-                }
-            }
+            if(ansContainer) ansContainer.style.display = isAllVisible ? 'block' : 'none';
         }
     });
 });
 
-// 從檢視模式返回
 document.getElementById('btnBackFromReview').addEventListener('click', () => {
-    // Hide all feature areas
     document.getElementById('reviewArea').style.display = 'none';
     document.getElementById('quizArea').style.display = 'none';
     document.getElementById('modeSelectionArea').style.display = 'none';
     document.getElementById('resultArea').style.display = 'none';
-    
-    // Show Home/Stats area
     document.getElementById('statsArea').style.display = 'block';
-    
-    // Ensure Start button is enabled
     document.getElementById('btnStart').disabled = false;
 });
 
-// 比對邏輯 (主測驗區)
 document.getElementById('btnSubmit').addEventListener('click', () => {
     let userAns = document.getElementById('userAnswer').value;
     let stdAns = currentQ.a;
 
-    if (!userAns.trim()) {
-        if(!confirm("您尚未作答，確定要送出嗎？")) return;
-    }
+    if (!userAns.trim() && !confirm("您尚未作答，確定要送出嗎？")) return;
 
     document.getElementById('resStandard').innerText = stdAns;
     document.getElementById('resUser').innerText = userAns;
 
-    let diffHtml = computeDiff(stdAns, userAns);
-    document.getElementById('resDiff').innerHTML = diffHtml;
+    let isUnordered = document.getElementById('unorderedMatch').checked;
+    document.getElementById('resDiff').innerHTML = isUnordered ? computeUnorderedDiff(stdAns, userAns) : computeDiff(stdAns, userAns);
 
     document.getElementById('resultArea').style.display = 'block';
     document.getElementById('userAnswer').disabled = true;
     document.getElementById('btnSubmit').style.display = 'none';
     
-    // 滾動到結果區，但要扣除 sticky header 的高度
     const headerHeight = document.getElementById('stickyHeader').offsetHeight;
     const element = document.getElementById('resultArea');
-    const elementPosition = element.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - headerHeight - 20;
-
-    window.scrollTo({
-         top: offsetPosition,
-         behavior: "smooth"
-    });
+    window.scrollTo({ top: element.getBoundingClientRect().top + window.pageYOffset - headerHeight - 20, behavior: "smooth" });
 });
 
 function isPunctuationOnly(str) {
@@ -1078,31 +1450,41 @@ function getSimilarity(dmp, t1, t2) {
 function computeDiff(std, user) {
     if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
 
+    std = std.replace(/（/g, '(').replace(/）/g, ')');
+    user = user.replace(/（/g, '(').replace(/）/g, ')');
+
     let dmp = new diff_match_patch();
-    
+    let diffs = dmp.diff_main(std, user);
+    dmp.diff_cleanupSemantic(diffs);
+
+    let html = '';
+    diffs.forEach(part => {
+        let type = part[0];
+        let text = part[1];
+
+        if (type === 0) {
+            html += `<span>${text}</span>`;
+        } else {
+            if (isPunctuationOnly(text)) html += `<span>${text}</span>`;
+            else if (type === 1) html += `<span class="diff-ins">${text}</span>`;
+            else if (type === -1) html += `<span class="diff-missing">${text}</span>`;
+        }
+    });
+    return html;
+}
+
+function computeUnorderedDiff(std, user) {
+    if (!user.trim()) return '<span class="text-danger fw-bold">❌ 未回答</span>';
+
+    let dmp = new diff_match_patch();
     let stdItems = parseListItems(std);
     let userItems = parseListItems(user);
     
-    let hasStdMarkers = stdItems.some(i => i.marker.trim() !== "");
-    
-    // 如果標準答案沒有使用任何清單標記，退回原本的全段落比對
-    if (!hasStdMarkers) {
-        let diffs = dmp.diff_main(std, user);
-        dmp.diff_cleanupSemantic(diffs);
-        let html = '';
-        diffs.forEach(part => {
-            if (part[0] === 0) html += `<span>${part[1]}</span>`;
-            else if (isPunctuationOnly(part[1])) html += `<span>${part[1]}</span>`;
-            else if (part[0] === 1) html += `<span class="diff-ins">${part[1]}</span>`;
-            else if (part[0] === -1) html += `<span class="diff-missing">${part[1]}</span>`;
-        });
-        return html;
-    }
+    if (!stdItems.some(i => i.marker.trim() !== "")) return computeDiff(std, user);
 
     let results = [];
     let usedUserIndices = new Set();
     
-    // 為標準答案的每一個項目，找出最相似的使用者作答項目
     for (let i = 0; i < stdItems.length; i++) {
         let sItem = stdItems[i];
         let bestMatchIdx = -1;
@@ -1111,13 +1493,9 @@ function computeDiff(std, user) {
         for (let j = 0; j < userItems.length; j++) {
             if (usedUserIndices.has(j)) continue;
             let sim = getSimilarity(dmp, sItem.content, userItems[j].content);
-            if (sim > bestSim) {
-                bestSim = sim;
-                bestMatchIdx = j;
-            }
+            if (sim > bestSim) { bestSim = sim; bestMatchIdx = j; }
         }
 
-        // 相似度大於 10%，或是在相同順序且未使用（當作備用配對）
         if (bestSim > 0.1 || (bestMatchIdx === -1 && i < userItems.length && !usedUserIndices.has(i))) {
             let matchIdx = bestSim > 0.1 ? bestMatchIdx : i;
             usedUserIndices.add(matchIdx);
@@ -1133,24 +1511,18 @@ function computeDiff(std, user) {
                 else if (part[0] === -1) html += `<span class="diff-missing">${part[1]}</span>`;
             });
             
-            // 保留使用者原本填寫的項次編號
             let markerHtml = uItem.marker ? `<span>${uItem.marker}</span>` : '';
             results.push(`<div class="mb-1">${markerHtml}${html}</div>`);
         } else {
-            // 完全漏答的項目，顯示標準答案的內容與編號
-            let missingText = sItem.marker + sItem.content;
-            results.push(`<div class="mb-1"><span class="diff-missing">${missingText}</span></div>`);
+            results.push(`<div class="mb-1"><span class="diff-missing">${sItem.marker + sItem.content}</span></div>`);
         }
     }
 
-    // 使用者多寫的項目
     for (let j = 0; j < userItems.length; j++) {
         if (!usedUserIndices.has(j)) {
-            let extraText = userItems[j].marker + userItems[j].content;
-            results.push(`<div class="mb-1"><span class="diff-ins">${extraText}</span></div>`);
+            results.push(`<div class="mb-1"><span class="diff-ins">${userItems[j].marker + userItems[j].content}</span></div>`);
         }
     }
-
     return results.join('');
 }
 </script>
